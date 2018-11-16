@@ -34,6 +34,13 @@ plugins {
 apply plugin: 'java-library'
 apply plugin: 'net.ltgt.errorprone'
 
+// To make the Eclipse Gradle Buildship plugin put the JMH jar on
+// the source path:
+apply plugin: 'eclipse'
+// Note: this plugin also creates Gradle tasks that generate Eclipse
+// config files, which are not as tidy as the Eclipse-Gradle-Buildship
+// generated ones. So don't use those tasks.
+
 repositories {
     jcenter()
     mavenCentral()
