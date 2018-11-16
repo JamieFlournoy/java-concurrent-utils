@@ -1,0 +1,270 @@
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "com.commercehub:gradle-cucumber-jvm-plugin:0.14"
+  }
+}
+
+plugins {
+    // This is used for running "./gradlew dependencyUpdates" to find
+    // available library updates (for use when updating version numbers
+    // in this file).
+    id "com.github.ben-manes.versions" version "0.20.0"
+
+    // This adds ErrorProne, which warns about source code that looks
+    // like it's likely to be a bug, or to lead to future bugs.
+    id "net.ltgt.errorprone" version "0.6"
+
+    // This plugin provides integration test tasks using the Cucumber
+    // behavior-driven development tool.
+    id 'com.commercehub.cucumber-jvm' version '0.14'
+
+    id 'maven-publish'
+    id 'signing'
+
+    // This adds a Gradle plugin for running benchmarks made with the
+    // JMH microbenchmarking framework.
+    id "me.champeau.gradle.jmh" version "0.4.7"
+}
+
+apply plugin: 'java-library'
+apply plugin: 'net.ltgt.errorprone'
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    // Dependencies needed at runtime and compile-time, but not
+    // exposed in the API of this library:
+    implementation 'com.google.guava:guava:27.0-jre'
+    implementation 'com.pervasivecode:time-utils:0.9'
+    implementation 'com.pervasivecode:stats-utils:0.9.1'
+    implementation 'com.google.auto.value:auto-value-annotations:1.6.2'
+
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
+
+    // Dependencies needed for running tests:
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:2.+'
+    testImplementation "com.google.truth:truth:0.42"
+
+    // To make the Eclipse Gradle Buildship plugin put Cucumber jars on the source path:
+    testImplementation 'io.cucumber:cucumber-java8:4.2.0'
+
+    // Dependencies of the JMH-based benchmark code in src/jmh/java:
+    jmh 'com.google.guava:guava:27.0-jre'
+    jmh 'com.pervasivecode:time-utils:0.9'
+
+    // Dependencies needed when running ErrorProne checks:
+    errorprone "com.google.errorprone:error_prone_core:2.3.2"
+
+    // ###########################
+    //  DEPENDENCIES TO ELIMINATE
+    // ###########################
+    compile 'joda-time:joda-time:2.9.6'
+}
+
+// Example code shouldn't be put in the library .jar, but should be compiled
+// before running unit and integration tests. So create a separate sourceSet
+// for example code, and make a task to compile it.
+sourceSets {
+    examples {
+        java {
+            compileClasspath += main.output + main.runtimeClasspath
+            runtimeClasspath += main.output + main.runtimeClasspath
+       }
+    }
+}
+configurations {
+    examplesCompile.extendsFrom mainCompile
+    examplesRuntime.extendsFrom mainRuntime
+}
+
+addCucumberSuite 'cucumberTest'
+cucumber {
+    maxParallelForks = 4
+}
+cucumberTest {
+    stepDefinitionRoots = ['com.pervasivecode.utils.concurrent.test.cucumber.steps']
+}
+dependencies {
+    cucumberTestImplementation 'io.cucumber:cucumber-java8:4.2.0'
+    cucumberTestImplementation 'junit:junit:4.12'
+    cucumberTestImplementation "com.google.truth:truth:0.42"
+    cucumberTestImplementation  group: 'com.google.guava', name: 'guava', version: '27.0-jre'
+}
+sourceSets {
+    cucumberTest {
+        java {
+            compileClasspath += examples.output
+            runtimeClasspath += examples.output
+        }
+    }
+}
+
+
+// Don't build cucumber test code unless examples code builds.
+cucumberTestClasses.dependsOn 'examplesClasses'
+// Don't run Cucumber integration tests unless JUnit unit tests pass.
+cucumberTest.dependsOn 'test'
+
+// Don't bother running benchmarks if integration tests fail.
+tasks.jmh.dependsOn 'cucumberTest'
+
+jmh {
+  include = '.*Buffering.*'
+
+  // Workaround for https://github.com/melix/jmh-gradle-plugin/issues/79
+  duplicateClassesStrategy = 'warn'
+}
+
+// tell the ErrorProne compiler not to warn about issues in generated
+// code (e.g. AutoValue generated classes)
+tasks.withType(JavaCompile).configureEach {
+  options.errorprone.disableWarningsInGeneratedCode = true
+  // options.errorprone.excludedPaths = ".*build\\/generated\\/source\\/.*"
+}
+
+// Generate Javadoc documentation files from Java source code.
+javadoc {
+    source = sourceSets.main.allJava
+    // This classpath value makes the source's dependencies visible to
+    // the Javadoc tool.
+    classpath = sourceSets.main.runtimeClasspath
+
+    options.addBooleanOption('html5', true)
+    options {
+        // Only document public members.
+        setMemberLevel JavadocMemberLevel.PUBLIC
+        setAuthor false
+
+        // Generate Javadocs links even when offline, using the
+        // element-list or package-list file copied from the public
+        // Javadocs to a local subdir. (The package-list file contains
+        // a list of Java package names of classes which are
+        // documented in the Javadocs rooted at the specified URL.)
+        linksOffline "https://docs.oracle.com/javase/10/docs/api/", 'gradle/javadocs/jdk/10'
+        linksOffline "https://google.github.io/guava/releases/27.0-jre/api/docs/", 'gradle/javadocs/guava/27.0-jre'
+    }
+}
+
+// Make a source code JAR archive.
+task sourcesJar(type: Jar, dependsOn: 'classes') {
+    classifier = 'sources'
+    from sourceSets.main.allJava
+}
+
+// Make a Javadoc JAR archive.
+task javadocJar(type: Jar, dependsOn: 'javadoc') {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            // Include the sources and Javadoc JAR files when
+            // publishing.
+            artifact sourcesJar
+            artifact javadocJar
+
+            afterEvaluate {
+                groupId = 'com.pervasivecode'
+                artifactId = 'measurement-utils-jsr363'
+
+                // This must end in "-SNAPSHOT" for publishing assets
+                // to a "snapshot" Maven repository to work, or else
+                // the Gradle task will fail with a 400 Bad Request
+                // response. Likewise, publishing assets to a release
+                // staging repository will only work if this version
+                // does _not_ end in "-SNAPSHOT".
+                version = '0.9.1'
+
+                pom {
+                    name = 'Java Measurement Utilities for JSR 363'
+                    description = 'Classes for using and formatting data and data-rate values in the JSR 363 Units of Measurement API.'
+                    url = 'https://github.com/JamieFlournoy/java-measurement-utils-jsr363'
+
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id = 'jamieflournoy'
+                            name = 'Jamie Flournoy'
+                            organization = 'Pervasive Code'
+                            email = 'jamie@pervasivecode.com'
+                            url = 'https://github.com/JamieFlournoy'
+                            organizationUrl = 'http://www.pervasivecode.com/'
+                        }
+                    }
+
+                    issueManagement {
+                        url = 'https://github.com/JamieFlournoy/java-measurement-utils-jsr363/issues'
+                        system = 'GitHub Issues'
+                    }
+
+                    scm {
+                url = 'https://github.com/JamieFlournoy/java-measurement-utils-jsr363'
+                        connection = 'scm:git:git://github.com/JamieFlournoy/java-measurement-utils-jsr363.git'
+                developerConnection = 'scm:git:git@github.com:JamieFlournoy/java-measurement-utils-jsr363.git'
+                    }
+                }
+
+            }
+        }
+    }
+
+    // Publish directly to a local directory (not the local Maven
+    // repository, but a directory under the build dir), for
+    // inspection & manual uploading.
+    repositories {
+        maven {
+            name = 'buildDir'
+            url = "file://${buildDir}/repo"
+        }
+        // Note: to deploy to this repository, you must set the
+        // OSSRH_PASSWORD environment variable. Also, the publication
+        // version (see above) must end in "-SNAPSHOT" or this will
+        // fail with an HTTP response code of 400 Bad Request.
+        maven {
+            name = 'ossrhSnapshots'
+            url = 'https://oss.sonatype.org/content/repositories/snapshots'
+            credentials {
+                username = ossrhUsername
+                password = System.getenv('OSSRH_PASSWORD')
+            }
+        }
+        // Note: to deploy to this repository, you must set the
+        // OSSRH_PASSWORD environment variable. Also, the publication
+        // version (see above) must _not_ end in "-SNAPSHOT" or this
+        // will fail with an HTTP response code of 400 Bad Request.
+        maven {
+            name = 'ossrhReleaseStaging'
+            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+            credentials {
+                username = ossrhUsername
+                password = System.getenv('OSSRH_PASSWORD')
+            }
+        }
+    }
+}
+
+signing {
+    // Sign assets that are destined for publication in a Maven Java
+    // archive.
+    useGpgCmd()
+    sign publishing.publications.mavenJava
+}

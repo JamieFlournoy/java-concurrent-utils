@@ -1,0 +1,8 @@
+Clean up the ConsoleTimingSummaryFormatter:
+- Remove the dependency on JodaTime since Java SE has comparable functionality
+  now
+- Implement some kind of scaling time formatting functionality, but without
+  depending on JSR-363.
+
+
+
