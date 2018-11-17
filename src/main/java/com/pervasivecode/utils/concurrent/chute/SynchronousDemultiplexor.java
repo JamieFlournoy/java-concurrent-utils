@@ -1,10 +1,9 @@
-package com.pervasivecode.utils.concurrent.chute.impl;
+package com.pervasivecode.utils.concurrent.chute;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.pervasivecode.utils.concurrent.chute.api.ChuteEntrance;
 
 public class SynchronousDemultiplexor<E> {
   private final AtomicInteger numInputChutesStillOpen;

@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.chute.api;
+package com.pervasivecode.utils.concurrent.chute;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;

@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.chute.api;
+package com.pervasivecode.utils.concurrent.chute;
 
 /**
  * A chute is a blocking queue that you can close. After being closed, a chute will not accept new

@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.chute.impl;
+package com.pervasivecode.utils.concurrent.chute;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -11,7 +11,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.Nonnull;
-import com.pervasivecode.utils.concurrent.chute.api.Chute;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
 public class BufferingChute<E> implements Chute<E> {

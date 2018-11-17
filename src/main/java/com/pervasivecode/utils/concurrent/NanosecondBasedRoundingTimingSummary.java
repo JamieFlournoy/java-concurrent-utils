@@ -1,9 +1,9 @@
-package com.pervasivecode.utils.concurrent.impl;
+package com.pervasivecode.utils.concurrent;
 
 import java.util.concurrent.TimeUnit;
 
 import com.google.auto.value.AutoValue;
-import com.pervasivecode.utils.concurrent.api.AccumulatingStopwatch.TimingSummary;
+import com.pervasivecode.utils.concurrent.AccumulatingStopwatch.TimingSummary;
 
 @AutoValue
 public abstract class NanosecondBasedRoundingTimingSummary implements TimingSummary {

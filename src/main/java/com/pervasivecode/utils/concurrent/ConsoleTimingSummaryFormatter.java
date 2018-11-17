@@ -1,11 +1,11 @@
-package com.pervasivecode.utils.concurrent.impl;
+package com.pervasivecode.utils.concurrent;
 
 import java.util.concurrent.TimeUnit;
 
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
-import com.pervasivecode.utils.concurrent.api.AccumulatingStopwatch.TimingSummary;
+import com.pervasivecode.utils.concurrent.AccumulatingStopwatch.TimingSummary;
 
 public class ConsoleTimingSummaryFormatter {
   // TODO replace this with ScalingDurationFormatter? (Or a simpler non-JSR363 class?)

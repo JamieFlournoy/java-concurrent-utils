@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.impl;
+package com.pervasivecode.utils.concurrent;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -24,8 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.pervasivecode.utils.concurrent.impl.AutoValue_BlockingExecutorService_BlockingExecutorServiceConfig;
-import com.pervasivecode.utils.concurrent.api.AccumulatingStopwatch.ActiveTimer;
+import com.pervasivecode.utils.concurrent.AccumulatingStopwatch.ActiveTimer;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
 /**

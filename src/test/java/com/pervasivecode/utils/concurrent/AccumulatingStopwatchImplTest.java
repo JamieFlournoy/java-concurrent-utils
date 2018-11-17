@@ -1,15 +1,15 @@
-package com.pervasivecode.utils.concurrent.impl;
+package com.pervasivecode.utils.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.pervasivecode.utils.concurrent.impl.AccumulatingStopwatchImplTest.TimerType.BAKED_POTATO;
-import static com.pervasivecode.utils.concurrent.impl.AccumulatingStopwatchImplTest.TimerType.HARD_BOILED_EGG;
+import static com.pervasivecode.utils.concurrent.AccumulatingStopwatchImplTest.TimerType.BAKED_POTATO;
+import static com.pervasivecode.utils.concurrent.AccumulatingStopwatchImplTest.TimerType.HARD_BOILED_EGG;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
-import com.pervasivecode.utils.concurrent.api.AccumulatingStopwatch.ActiveTimer;
-import com.pervasivecode.utils.concurrent.api.AccumulatingStopwatch.TimingSummary;
-import com.pervasivecode.utils.concurrent.impl.AccumulatingStopwatchImpl;
+import com.pervasivecode.utils.concurrent.AccumulatingStopwatchImpl;
+import com.pervasivecode.utils.concurrent.AccumulatingStopwatch.ActiveTimer;
+import com.pervasivecode.utils.concurrent.AccumulatingStopwatch.TimingSummary;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
 
 public class AccumulatingStopwatchImplTest {

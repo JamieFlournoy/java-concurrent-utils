@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.impl;
+package com.pervasivecode.utils.concurrent;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.time.Duration;
 
 import com.google.common.collect.ImmutableMap;
-import com.pervasivecode.utils.concurrent.api.AccumulatingStopwatch;
 import com.pervasivecode.utils.stats.histogram.BucketSelector;
 import com.pervasivecode.utils.stats.histogram.BucketSelectors;
 import com.pervasivecode.utils.stats.histogram.ConcurrentHistogram;

@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.api;
+package com.pervasivecode.utils.concurrent;
 
 import java.util.concurrent.TimeUnit;
 import com.pervasivecode.utils.stats.histogram.Histogram;
@@ -18,6 +18,7 @@ public interface AccumulatingStopwatch<T extends Enum<?>> {
      * This value is not necessarily equivalent to wall-clock time since a Stopwatch instance may be
      * used to produce ActiveTimer instances belonging to separate, concurrently-executing threads.
      */
+    // TODO change from TimeUnit to ChronoUnit.
     public long totalElapsedTime(TimeUnit timeUnit);
 
     public long numStartStopCycles();

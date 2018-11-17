@@ -1,11 +1,11 @@
-package com.pervasivecode.utils.concurrent.impl;
+package com.pervasivecode.utils.concurrent;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.Test;
-import com.pervasivecode.utils.concurrent.api.AccumulatingStopwatch.TimingSummary;
-import com.pervasivecode.utils.concurrent.impl.ConsoleTimingSummaryFormatter;
-import com.pervasivecode.utils.concurrent.impl.NanosecondBasedRoundingTimingSummary;
+import com.pervasivecode.utils.concurrent.ConsoleTimingSummaryFormatter;
+import com.pervasivecode.utils.concurrent.NanosecondBasedRoundingTimingSummary;
+import com.pervasivecode.utils.concurrent.AccumulatingStopwatch.TimingSummary;
 
 public class ConsoleTimingSummaryFormatterTest {
   @Test

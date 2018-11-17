@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.chute.impl;
+package com.pervasivecode.utils.concurrent.chute;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -15,8 +15,6 @@ import java.time.Duration;
 import java.time.Instant;
 
 import com.google.common.collect.ImmutableList;
-import com.pervasivecode.utils.concurrent.chute.api.ChuteEntrance;
-import com.pervasivecode.utils.concurrent.chute.api.ChuteExit;
 import com.pervasivecode.utils.time.api.TimeSource;
 
 public class Transformers {

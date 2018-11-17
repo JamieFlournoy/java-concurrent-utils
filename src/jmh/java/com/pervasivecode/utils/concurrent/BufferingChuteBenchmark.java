@@ -22,8 +22,8 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.pervasivecode.utils.concurrent.chute.api.Chute;
-import com.pervasivecode.utils.concurrent.chute.impl.BufferingChute;
+import com.pervasivecode.utils.concurrent.chute.BufferingChute;
+import com.pervasivecode.utils.concurrent.chute.Chute;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
 /**

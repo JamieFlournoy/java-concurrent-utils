@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.chute.impl;
+package com.pervasivecode.utils.concurrent.chute;
 
 import static com.google.common.truth.Truth.assertThat;
 import java.time.Duration;
@@ -14,8 +14,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
 import com.google.common.collect.ImmutableList;
-import com.pervasivecode.utils.concurrent.chute.impl.BufferingChute;
-import com.pervasivecode.utils.concurrent.chute.impl.Transformers;
+import com.pervasivecode.utils.concurrent.chute.BufferingChute;
+import com.pervasivecode.utils.concurrent.chute.Transformers;
 import com.pervasivecode.utils.time.api.TimeSource;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
 

@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent.chute.impl;
+package com.pervasivecode.utils.concurrent.chute;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -15,9 +15,9 @@ import org.junit.Test;
 import com.google.common.truth.Truth;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.pervasivecode.utils.concurrent.chute.api.ChuteEntrance;
-import com.pervasivecode.utils.concurrent.chute.impl.BufferingChute;
-import com.pervasivecode.utils.concurrent.chute.impl.SynchronousDemultiplexor;
+import com.pervasivecode.utils.concurrent.chute.BufferingChute;
+import com.pervasivecode.utils.concurrent.chute.ChuteEntrance;
+import com.pervasivecode.utils.concurrent.chute.SynchronousDemultiplexor;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
 
 public class SynchronousDemultiplexorTest {
