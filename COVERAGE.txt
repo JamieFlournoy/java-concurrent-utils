@@ -1,0 +1,5 @@
+To run coverage tests with jacoco, run
+  ./gradlew test jacocoTestReport
+and look for the report in
+  build/reports/jacoco/test/html/index.html
+

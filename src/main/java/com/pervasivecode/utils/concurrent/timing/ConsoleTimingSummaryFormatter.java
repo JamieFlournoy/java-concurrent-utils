@@ -1,23 +1,22 @@
-package com.pervasivecode.utils.concurrent;
+package com.pervasivecode.utils.concurrent.timing;
 
 import java.util.concurrent.TimeUnit;
-
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
-import com.pervasivecode.utils.concurrent.AccumulatingStopwatch.TimingSummary;
+import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 
 public class ConsoleTimingSummaryFormatter {
-  // TODO replace this with ScalingDurationFormatter? (Or a simpler non-JSR363 class?)
-  private static final PeriodFormatter PERIOD_FORMATTER = new PeriodFormatterBuilder()
-      .appendDays()
-      .appendSuffix("d")
-      .appendHours()
-      .appendSuffix("h")
-      .appendMinutes()
-      .appendSuffix("m")
-      .appendSecondsWithMillis()
-      .appendSuffix("s")
+  // TODO replace this with ScalingDurationFormatter? (Or a simpler, still non-JSR363 class?)
+  private static final PeriodFormatter PERIOD_FORMATTER = new PeriodFormatterBuilder() //
+      .appendDays() //
+      .appendSuffix("d") //
+      .appendHours() //
+      .appendSuffix("h") //
+      .appendMinutes() //
+      .appendSuffix("m") //
+      .appendSecondsWithMillis() //
+      .appendSuffix("s") //
       .toFormatter();
 
   public String format(TimingSummary summary) {
@@ -36,7 +35,7 @@ public class ConsoleTimingSummaryFormatter {
     String formattedPeriod = PERIOD_FORMATTER.print(new Period(Math.round(totalMillis)));
 
     String suffix = numCycles == 1 ? "" : "s";
-    return String.format("%s (%s%d cycle%s)", formattedPeriod, avgMillisPerCycleFragment,
-        numCycles, suffix);
+    return String.format("%s (%s%d cycle%s)", formattedPeriod, avgMillisPerCycleFragment, numCycles,
+        suffix);
   }
 }

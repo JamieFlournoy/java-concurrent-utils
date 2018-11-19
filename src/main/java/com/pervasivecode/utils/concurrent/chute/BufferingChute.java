@@ -2,17 +2,22 @@ package com.pervasivecode.utils.concurrent.chute;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import javax.annotation.Nonnull;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
+/**
+ * This Chute implementaton is based around a BlockingQueue, providing a fixed-size nonzero-capacity
+ * buffer holding elements that have been put into the ChuteEntrance but not yet taken from the
+ * ChuteExit.
+ *
+ * @param <E> The type of object that can be sent through the BufferingChute.
+ */
 public class BufferingChute<E> implements Chute<E> {
   private static class Datum<L> {
     public L wrappedElement;
@@ -57,6 +62,8 @@ public class BufferingChute<E> implements Chute<E> {
     putLock.lockInterruptibly();
     try {
       this.isOpen.set(false);
+      // TODO figure out a way to close() without blocking when the buffer is full, while still
+      // unblocking take() callers who are blocked waiting for an element when the chute is closed.
       buffer.put(eofDatum);
     } finally {
       putLock.unlock();
@@ -93,25 +100,20 @@ public class BufferingChute<E> implements Chute<E> {
       return Optional.empty();
     }
 
+    if (timeout == 0) {
+      return tryTakeNow();
+    }
+
     long currentTimeNanosBeforeTryLock = this.nanosSource.currentTimeNanoPrecision();
     boolean gotTakeLockInTime = this.takeLock.tryLock(timeout, timeoutUnit);
     if (!gotTakeLockInTime) {
       return Optional.empty();
     }
     try {
-      if (isClosedAndEmpty()) {
-        return Optional.empty();
-      }
-
       long nanosElapsedAcquiringLock =
           this.nanosSource.currentTimeNanoPrecision() - currentTimeNanosBeforeTryLock;
       long timeoutNanos = timeoutUnit.toNanos(timeout);
       long remainingTimeoutNanos = timeoutNanos - nanosElapsedAcquiringLock;
-
-      // Important: if timeoutNanos == 0 we still need to get the last datum.
-      if (timeoutNanos != 0 && remainingTimeoutNanos <= 0) {
-        return Optional.empty();
-      }
 
       Datum<E> datum = buffer.poll(remainingTimeoutNanos, TimeUnit.NANOSECONDS);
 
@@ -133,18 +135,13 @@ public class BufferingChute<E> implements Chute<E> {
     }
   }
 
+  private boolean isNullOrEof(Datum<E> datum) {
+    return (datum == null || datum == this.eofDatum);
+  }
+
   @Override
   public Optional<E> tryTakeNow() {
     if (isClosedAndEmpty()) {
-      return Optional.empty();
-    }
-
-    // Take a look and see if we can return early, without locking takeLock.
-    Datum<E> datum = buffer.peek();
-    if (datum == null) {
-      return Optional.empty();
-    }
-    if (datum == this.eofDatum) {
       return Optional.empty();
     }
 
@@ -155,21 +152,12 @@ public class BufferingChute<E> implements Chute<E> {
 
     try {
       // Look at it, but don't take it.
-      datum = buffer.peek();
-      if (datum == null) {
+      Datum<E> datum = buffer.peek();
+      if (isNullOrEof(datum)) {
         return Optional.empty();
       }
-      if (datum == this.eofDatum) {
-        return Optional.empty();
-      }
-      // Take it.
-      datum = buffer.poll();
-      if (datum == null) {
-        return Optional.empty();
-      }
-      if (datum == this.eofDatum) {
-        throw new IllegalStateException("Bug: should not be able to take eofDatum at this point.");
-      }
+      // Remove the head of the queue, which we already have a reference to in datum.
+      buffer.poll();
       return Optional.of(datum.wrappedElement);
     } finally {
       takeLock.unlock();
@@ -178,29 +166,17 @@ public class BufferingChute<E> implements Chute<E> {
 
   @Override
   public Optional<E> take() throws InterruptedException {
-    // Take a look and see if we can return early, without locking takeLock.
-    Datum<E> datum = buffer.peek();
-    if (datum == this.eofDatum) {
+    if (isClosedAndEmpty()) {
       return Optional.empty();
     }
-
     takeLock.lockInterruptibly();
     try {
-      datum = buffer.peek();
-      if (datum == this.eofDatum) {
+      final Datum<E> takenDatum = buffer.take(); // will not return null
+      if (takenDatum == this.eofDatum) {
+        buffer.put(takenDatum);
         return Optional.empty();
       }
-      datum = buffer.take();
-      if (datum == this.eofDatum) {
-        // Oops; we didn't mean to take that instance. Put it back.
-        buffer.put(datum);
-        // The channel is closed.
-        return Optional.empty();
-      }
-      if (datum == null) {
-        throw new IllegalStateException("Bug: should never get a null datum from take().");
-      }
-      return Optional.of(datum.wrappedElement);
+      return Optional.of(takenDatum.wrappedElement);
     } finally {
       takeLock.unlock();
     }
@@ -210,7 +186,7 @@ public class BufferingChute<E> implements Chute<E> {
   public boolean isClosedAndEmpty() {
     if (isClosed()) {
       Datum<E> last = buffer.peek();
-      if (last == null || last == this.eofDatum) {
+      if (isNullOrEof(last)) {
         return true;
       }
     }
