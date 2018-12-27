@@ -91,11 +91,9 @@ public class BlockingExecutorServiceTest {
     checkNotNull(nanoSource);
     return BlockingExecutorServiceConfig.builder() //
         .setCurrentNanosSource(this.nanoSource) //
-        .setMinThreads(1) //
-        .setMaxThreads(3) //
+        .setNumThreads(3) //
         .setNameFormat("%d") //
         .setQueueSize(1) //
-        .setSecondsBeforeIdleThreadExits(2) //
         .setStopwatch(mockStopwatch); //
   }
 
@@ -206,8 +204,7 @@ public class BlockingExecutorServiceTest {
 
     BlockingExecutorServiceConfig config = configBuilder() //
         .setQueueSize(1) //
-        .setMinThreads(1) //
-        .setMaxThreads(1) //
+        .setNumThreads(1) //
         .build();
     blockingExecService = new BlockingExecutorService(config);
 
@@ -294,8 +291,7 @@ public class BlockingExecutorServiceTest {
   public void shutdown_withRunningTask_shouldLetRunningAndQueuedTasksRun() throws Exception {
     BlockingExecutorServiceConfig config = configBuilder() //
         .setQueueSize(1) //
-        .setMinThreads(1) //
-        .setMaxThreads(1) //
+        .setNumThreads(1) //
         .build();
     blockingExecService = new BlockingExecutorService(config);
 
@@ -349,7 +345,7 @@ public class BlockingExecutorServiceTest {
   @Repeat(times = NUM_REPEATS)
   public void shutdownNow_shouldReturnWrappedVersionsOfQueuedButNotStartedTasks() throws Exception {
     BlockingExecutorServiceConfig config =
-        configBuilder().setQueueSize(2).setMinThreads(1).setMaxThreads(1).build();
+        configBuilder().setQueueSize(2).setNumThreads(1).build();
     blockingExecService = new BlockingExecutorService(config);
 
     BlockingExecutorTestHelper queueHelper = new BlockingExecutorTestHelper(blockingExecService);
@@ -500,8 +496,7 @@ public class BlockingExecutorServiceTest {
   public void awaitTermination_withQueuedAndRunningTasksShorterThanTimeout_shouldWait()
       throws Exception {
     BlockingExecutorServiceConfig config = configBuilder() //
-        .setMinThreads(1) //
-        .setMaxThreads(1) //
+        .setNumThreads(1) //
         .setQueueSize(1) //
         .build();
     blockingExecService = new BlockingExecutorService(config);
@@ -603,8 +598,7 @@ public class BlockingExecutorServiceTest {
   @Repeat(times = NUM_REPEATS)
   public void submitCallable_withFullQueue_shouldBlockThenRun() throws Exception {
     BlockingExecutorServiceConfig config = configBuilder() //
-        .setMinThreads(3) //
-        .setMaxThreads(5) //
+        .setNumThreads(5) //
         .setQueueSize(10) //
         .build();
     blockingExecService = new BlockingExecutorService(config);
@@ -820,7 +814,7 @@ public class BlockingExecutorServiceTest {
     BlockingExecutorServiceConfig config = configBuilder().build();
     blockingExecService = new BlockingExecutorService(config);
 
-    int numSlowpokes = config.maxThreads() - 1; // Must leave a thread for succeeders to run on
+    int numSlowpokes = config.numThreads() - 1; // Must leave a thread for succeeders to run on
     int numSucceeders = blockingExecService.maxUnblockedTaskCount() * 2;
     List<PausingNoOpCallable> blockers =
         BlockingExecutorTestHelper.buildBlockingCallables(numSlowpokes);
@@ -894,7 +888,7 @@ public class BlockingExecutorServiceTest {
     BlockingExecutorServiceConfig config = configBuilder().build();
     blockingExecService = new BlockingExecutorService(config);
 
-    int numSlowpokes = config.maxThreads() - 1;
+    int numSlowpokes = config.numThreads() - 1;
     CountDownLatch slowpokesToCancel = new CountDownLatch(numSlowpokes);
     List<Callable<Long>> invokable = new ArrayList<>(numSlowpokes + 1);
     for (int i = 0; i < numSlowpokes; i++) {

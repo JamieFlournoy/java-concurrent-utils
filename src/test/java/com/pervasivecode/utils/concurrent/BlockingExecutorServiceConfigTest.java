@@ -24,11 +24,9 @@ public class BlockingExecutorServiceConfigTest {
   private BlockingExecutorServiceConfig.Builder validBuilder() {
     return BlockingExecutorServiceConfig.builder() //
         .setCurrentNanosSource(nanoSource) //
-        .setMinThreads(0) //
-        .setMaxThreads(2) //
+        .setNumThreads(2) //
         .setNameFormat("worker %d") //
         .setQueueSize(10) //
-        .setSecondsBeforeIdleThreadExits(10) //
         .setStopwatch(stopwatch);
   }
 
@@ -49,15 +47,9 @@ public class BlockingExecutorServiceConfigTest {
   }
 
   @Test
-  public void build_withInvalidMinThreads_shouldThrow() {
-    assertExceptionWhenBuilding(validBuilder().setMinThreads(-10), "minThreads");
-  }
-
-  @Test
-  public void build_withInvalidMaxThreads_shouldThrow() {
-    assertExceptionWhenBuilding(validBuilder().setMaxThreads(0), "maxThreads");
-    assertExceptionWhenBuilding(validBuilder().setMaxThreads(-10), "maxThreads");
-    assertExceptionWhenBuilding(validBuilder().setMinThreads(10).setMaxThreads(9), "maxThreads");
+  public void build_withInvalidNumThreads_shouldThrow() {
+    assertExceptionWhenBuilding(validBuilder().setNumThreads(0), "numThreads");
+    assertExceptionWhenBuilding(validBuilder().setNumThreads(-10), "numThreads");
   }
 
   @Test
@@ -65,12 +57,6 @@ public class BlockingExecutorServiceConfigTest {
     assertExceptionWhenBuilding(validBuilder().setNameFormat("asdasdasd"), "nameFormat");
     assertExceptionWhenBuilding(validBuilder().setNameFormat("asdasdasd %f"), "nameFormat");
     assertExceptionWhenBuilding(validBuilder().setNameFormat("asdasdasd %s"), "nameFormat");
-  }
-
-  @Test
-  public void build_withInvalidSecondsBeforeIdleThreadExits_shouldThrow() {
-    assertExceptionWhenBuilding(validBuilder().setSecondsBeforeIdleThreadExits(-10),
-        "secondsBeforeIdleThreadExits");
   }
 
   // Null-checking for setStopwatch is already done by the AutoValue-generated Builder class.

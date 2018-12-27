@@ -26,20 +26,12 @@ public abstract class BlockingExecutorServiceConfig {
   public abstract CurrentNanosSource currentNanosSource();
 
   /**
-   * The maximum numnber of worker threads that should be created and used by the
-   * BlockingExecutorService.
+   * The number of threads that should be created by the BlockingExecutorService for use in running
+   * submitted tasks.
    * 
    * @return the number of worker threads.
    */
-  public abstract int maxThreads();
-
-  /**
-   * The minimum number of threads that should be kept in existence by the BlockingExecutorService
-   * even if there is not enough work for them at the moment.
-   * 
-   * @return the minimum number of worker threads.
-   */
-  public abstract int minThreads();
+  public abstract int numThreads();
 
   /**
    * The format to use to name worker threads. This must contain a "%d" placeholder which will be
@@ -60,16 +52,6 @@ public abstract class BlockingExecutorServiceConfig {
   public abstract int queueSize();
 
   /**
-   * The number of seconds that idle worker threads (beyond the quantity indicated by
-   * {{@link #minThreads()} will wait for another task to work on before exiting. If the number of
-   * worker threads is equal to the value of {@link #maxThreads()}, the thread will not exit, even
-   * if it has been idle for longer than this number of seconds.
-   * 
-   * @return a number of seconds to let an idle thread remain idle before it exits.
-   */
-  public abstract int secondsBeforeIdleThreadExits();
-
-  /**
    * A {@link MultistageStopwatch}{@code <}{@link Operation}{@code >} that will be used to track the
    * amount of time that tasks spend in various parts of the BlockingExecutorService's lifecycle.
    * 
@@ -86,16 +68,11 @@ public abstract class BlockingExecutorServiceConfig {
     public abstract BlockingExecutorServiceConfig.Builder setCurrentNanosSource(
         CurrentNanosSource nanosSource);
 
-    public abstract BlockingExecutorServiceConfig.Builder setMaxThreads(int maxThreads);
-
-    public abstract BlockingExecutorServiceConfig.Builder setMinThreads(int minThreads);
+    public abstract BlockingExecutorServiceConfig.Builder setNumThreads(int minThreads);
 
     public abstract BlockingExecutorServiceConfig.Builder setNameFormat(String nameFormat);
 
     public abstract BlockingExecutorServiceConfig.Builder setQueueSize(int queueSize);
-
-    public abstract BlockingExecutorServiceConfig.Builder setSecondsBeforeIdleThreadExits(
-        int seconds);
 
     public abstract BlockingExecutorServiceConfig.Builder setStopwatch(
         MultistageStopwatch<Operation> stopwatch);
@@ -106,19 +83,7 @@ public abstract class BlockingExecutorServiceConfig {
       BlockingExecutorServiceConfig config = buildInternal();
 
       checkArgument(config.queueSize() > 0, "queueSize must be positive.");
-
-      int minThreads = config.minThreads();
-      checkArgument(minThreads >= 0, "minThreads cannot be negative.");
-
-      int maxThreads = config.maxThreads();
-      checkArgument(maxThreads > 0, "maxThreads must be larger than 0.");
-
-      checkArgument(maxThreads >= minThreads,
-          "maxThreads must be >= minThreads (got max %s, min %s)", maxThreads, minThreads);
-
-      checkArgument(config.secondsBeforeIdleThreadExits() >= 0,
-          "secondsBeforeIdleThreadExits cannot be negative.");
-
+      checkArgument(config.numThreads() > 0, "numThreads must be positive.");
       checkArgument(config.nameFormat().contains("%d"),
           "nameFormat must contain a %%d placeholder.");
 

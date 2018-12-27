@@ -23,11 +23,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.pervasivecode.utils.concurrent.timing.StoppableTimer;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch;
+import com.pervasivecode.utils.concurrent.timing.StoppableTimer;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
 /**
@@ -86,11 +85,6 @@ public class BlockingExecutorService implements ExecutorService {
    *        instance being created.
    */
   public BlockingExecutorService(BlockingExecutorServiceConfig config) {
-    this(config, new ThreadPoolExecutorSupplier(config));
-  }
-
-  private BlockingExecutorService(BlockingExecutorServiceConfig config,
-      Supplier<ExecutorService> executorServiceSupplier) {
     // Note: validation of config values is done in BlockingExecutorServiceConfig.Builder#build(),
     // so we don't need to do it here.
     maxQueueCapacity = config.queueSize();
@@ -105,10 +99,26 @@ public class BlockingExecutorService implements ExecutorService {
     // so we can't rely on (maxQueueCapacity + config.maxThreads()) tasks safely being executable
     // without RejectedExecutionException.
 
-    maxUnblockedTaskCount = maxQueueCapacity + config.maxThreads();
+    maxUnblockedTaskCount = maxQueueCapacity + config.numThreads();
     queueSlotSemaphore = new Semaphore(maxUnblockedTaskCount);
 
-    executor = executorServiceSupplier.get();
+    executor = makeExecutor(config);
+  }
+
+  private static ThreadPoolExecutor makeExecutor(BlockingExecutorServiceConfig config) {
+    // Make the queue large enough that it never actually fills, its capacity being guarded by
+    // queueSlotSemaphore.
+    int actualQueueSize = config.queueSize() + 1;
+    
+    ThreadPoolExecutor tpe = new ThreadPoolExecutor(config.numThreads(), config.numThreads(), 0L,
+        SECONDS, new ArrayBlockingQueue<>(actualQueueSize),
+        new ThreadFactoryBuilder().setNameFormat(config.nameFormat()).build());
+
+    // This should never be needed, helps to iron out odd cases where ThreadPoolExecutor is
+    // starting up its worker threads and rejects tasks even though it hasn't started all of its
+    // core threads yet(!). (This is not hypothetical, but was experimentally determined.)
+    tpe.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    return tpe;
   }
 
   /**
@@ -571,32 +581,5 @@ public class BlockingExecutorService implements ExecutorService {
     }
     throw new IllegalStateException(
         "Invalid internal state: no success, no failures, not interrupted.");
-  }
-
-  // TODO move this setup code back into the constructor.
-  private static class ThreadPoolExecutorSupplier implements Supplier<ExecutorService> {
-    private final BlockingExecutorServiceConfig config;
-
-    public ThreadPoolExecutorSupplier(BlockingExecutorServiceConfig config) {
-      this.config = checkNotNull(config, "The config parameter is required.");
-    }
-
-    @Override
-    public ExecutorService get() {
-      // TODO simplify config so it's always a fixed number of threads (and thus no
-      // secondsBeforeIdleThreadExits)
-      int actualNumThreads = config.maxThreads();
-      int actualQueueSize = config.queueSize() + 1;
-      ThreadPoolExecutor executor = new ThreadPoolExecutor(actualNumThreads, actualNumThreads, 0L,
-          SECONDS, new ArrayBlockingQueue<>(actualQueueSize),
-          new ThreadFactoryBuilder().setNameFormat(config.nameFormat()).build());
-
-      // This should never be needed, helps to iron out odd cases where ThreadPoolExecutor is
-      // starting up its worker threads and rejects tasks even though it hasn't started all of its
-      // core threads yet(!). (This is not hypothetical, but was experimentally determined.)
-      executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
-
-      return executor;
-    }
   }
 }
