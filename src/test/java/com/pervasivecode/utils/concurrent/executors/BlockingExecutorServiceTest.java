@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent;
+package com.pervasivecode.utils.concurrent.executors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assertThat;
@@ -27,7 +27,7 @@ import org.mockito.MockitoAnnotations;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.truth.Truth;
-import com.pervasivecode.utils.concurrent.BlockingExecutorService.Operation;
+import com.pervasivecode.utils.concurrent.executors.BlockingExecutorService.Operation;
 import com.pervasivecode.utils.concurrent.testing.AwaitableNoOpRunnable;
 import com.pervasivecode.utils.concurrent.testing.FailingCallable;
 import com.pervasivecode.utils.concurrent.testing.PausingAwaitableNoOpRunnable;

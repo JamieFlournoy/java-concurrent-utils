@@ -1,10 +1,10 @@
-package com.pervasivecode.utils.concurrent;
+package com.pervasivecode.utils.concurrent.executors;
 
 import static com.google.common.truth.Truth.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 import com.google.common.truth.Truth;
-import com.pervasivecode.utils.concurrent.BlockingExecutorService.Operation;
+import com.pervasivecode.utils.concurrent.executors.BlockingExecutorService.Operation;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch;
 import com.pervasivecode.utils.concurrent.timing.SimpleMultistageStopwatch;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;

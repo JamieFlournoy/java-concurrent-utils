@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent;
+package com.pervasivecode.utils.concurrent.executors;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;

@@ -1,4 +1,4 @@
-package com.pervasivecode.utils.concurrent;
+package com.pervasivecode.utils.concurrent.executors;
 
 import static com.google.common.truth.Truth.assertThat;
 import java.util.Arrays;
@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import com.google.common.collect.ImmutableList;
+import com.pervasivecode.utils.concurrent.executors.BlockingExecutorService;
 import com.pervasivecode.utils.concurrent.testing.FailingCallable;
 import com.pervasivecode.utils.concurrent.testing.PausingNoOpCallable;
 import com.pervasivecode.utils.concurrent.testing.PausingNoOpRunnable;

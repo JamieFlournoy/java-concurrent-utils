@@ -1,8 +1,8 @@
-package com.pervasivecode.utils.concurrent;
+package com.pervasivecode.utils.concurrent.executors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import com.google.auto.value.AutoValue;
-import com.pervasivecode.utils.concurrent.BlockingExecutorService.Operation;
+import com.pervasivecode.utils.concurrent.executors.BlockingExecutorService.Operation;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
