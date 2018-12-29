@@ -63,11 +63,12 @@ dependencies {
     annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
 
     // Dependencies needed for running tests:
+    testImplementation 'com.pervasivecode:concurrent-testing-utils:0.9.0-SNAPSHOT'
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.+'
     testImplementation "com.google.truth:truth:0.42"
     testImplementation 'com.github.cbismuth:junit-repeat-rule:1.1.2'
-	testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.0.3'
+    testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.0.3'
 
     // To make the Eclipse Gradle Buildship plugin put Cucumber jars on the source path:
     testImplementation 'io.cucumber:cucumber-java8:4.2.0'
@@ -218,7 +219,7 @@ publishing {
 
             afterEvaluate {
                 groupId = 'com.pervasivecode'
-                artifactId = 'measurement-utils-jsr363'
+                artifactId = 'concurrent-utils'
 
                 // This must end in "-SNAPSHOT" for publishing assets
                 // to a "snapshot" Maven repository to work, or else
@@ -226,12 +227,12 @@ publishing {
                 // response. Likewise, publishing assets to a release
                 // staging repository will only work if this version
                 // does _not_ end in "-SNAPSHOT".
-                version = '0.9.1'
+                version = '0.9.0-SNAPSHOT'
 
                 pom {
-                    name = 'Java Measurement Utilities for JSR 363'
-                    description = 'Classes for using and formatting data and data-rate values in the JSR 363 Units of Measurement API.'
-                    url = 'https://github.com/JamieFlournoy/java-measurement-utils-jsr363'
+                    name = 'Java Concurrency Utilities'
+                    description = 'Classes for running and timing concurrent tasks, and for simplifying producer/consumer designs.'
+                    url = 'https://github.com/JamieFlournoy/java-concurrent-utils'
 
                     licenses {
                         license {
