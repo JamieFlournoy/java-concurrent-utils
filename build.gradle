@@ -231,7 +231,7 @@ publishing {
 
                 pom {
                     name = 'Java Concurrency Utilities'
-                    description = 'Classes for running and timing concurrent tasks, and for simplifying producer/consumer designs.'
+                    description = 'Classes for running and timing concurrent tasks.'
                     url = 'https://github.com/JamieFlournoy/java-concurrent-utils'
 
                     licenses {
