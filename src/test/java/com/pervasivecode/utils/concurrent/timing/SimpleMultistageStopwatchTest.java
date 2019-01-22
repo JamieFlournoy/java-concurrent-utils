@@ -2,7 +2,7 @@ package com.pervasivecode.utils.concurrent.timing;
 
 import static com.google.common.truth.Truth.assertThat;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.time.temporal.ChronoUnit;
 import org.junit.Before;
 import org.junit.Test;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
@@ -117,11 +117,11 @@ public class SimpleMultistageStopwatchTest {
     TimingSummary bakeSummary = stopwatch.summarize(RecipeStep.BAKE);
 
     assertThat(mixSummary.numStartStopCycles()).isEqualTo(3);
-    assertThat(mixSummary.totalElapsedTime(TimeUnit.NANOSECONDS))
+    assertThat(mixSummary.totalElapsedTime(ChronoUnit.NANOS))
         .isEqualTo(sumOfMixDurations.toNanos());
 
     assertThat(bakeSummary.numStartStopCycles()).isEqualTo(1);
-    assertThat(bakeSummary.totalElapsedTime(TimeUnit.NANOSECONDS))
+    assertThat(bakeSummary.totalElapsedTime(ChronoUnit.NANOS))
         .isEqualTo(bakeDuration.toNanos());
   }
 }

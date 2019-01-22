@@ -6,6 +6,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.mockito.Mockito.when;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -579,11 +580,11 @@ public class BlockingExecutorServiceTest {
 
     TimingSummary queueTiming = stopwatch.summarize(Operation.QUEUE);
     assertThat(queueTiming.numStartStopCycles()).isEqualTo(1);
-    assertThat(queueTiming.totalElapsedTime(TimeUnit.NANOSECONDS)).isAtLeast(1L);
+    assertThat(queueTiming.totalElapsedTime(ChronoUnit.NANOS)).isAtLeast(1L);
 
     TimingSummary blockTiming = stopwatch.summarize(Operation.BLOCK);
     assertThat(blockTiming.numStartStopCycles()).isEqualTo(1);
-    assertThat(blockTiming.totalElapsedTime(TimeUnit.NANOSECONDS)).isAtLeast(1L);
+    assertThat(blockTiming.totalElapsedTime(ChronoUnit.NANOS)).isAtLeast(1L);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

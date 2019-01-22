@@ -1,6 +1,6 @@
 package com.pervasivecode.utils.concurrent.timing;
 
-import java.util.concurrent.TimeUnit;
+import java.time.temporal.ChronoUnit;
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormatter;
 import org.joda.time.format.PeriodFormatterBuilder;
@@ -22,7 +22,7 @@ public class ConsoleTimingSummaryFormatter {
   public String format(TimingSummary summary) {
     long numCycles = summary.numStartStopCycles();
     // This is a double so that avgMillisPerCycleFragment can show fractions of a millisecond.
-    double totalMillis = summary.totalElapsedTime(TimeUnit.MICROSECONDS) / 1000.0;
+    double totalMillis = summary.totalElapsedTime(ChronoUnit.MICROS) / 1000.0;
 
     String avgMillisPerCycleFragment = "";
     if (numCycles > 0) {

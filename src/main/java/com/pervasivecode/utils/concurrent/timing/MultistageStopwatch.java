@@ -1,6 +1,6 @@
 package com.pervasivecode.utils.concurrent.timing;
 
-import java.util.concurrent.TimeUnit;
+import java.time.temporal.ChronoUnit;
 
 /**
  * This stopwatch manages multiple concurrent timers tracking each stage of a user-defined
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
  * creates an Enum called {@code Sport} with elements {@code RUNNING}, {@code SWIMMING}, and
  * {@code BICYCLING}, and uses this as the parameterized type for a
  * {@code MultistageConcurrentStopwatch}:
- * 
+ *
  * <pre>
  * MultistageConcurrentStopwatch&lt;Sport&gt; stopwatch = ... // implementation constructed here
  * ...
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  * System.out.println(String.format(
  *     "Average bicycling race leg time across all competitors: %d seconds", averageSeconds));
  * </pre>
- * 
+ *
  * @param <T> The enumeration of individual phases that are contained in the measured activities.
  */
 public interface MultistageStopwatch<T extends Enum<?>> {
@@ -42,14 +42,20 @@ public interface MultistageStopwatch<T extends Enum<?>> {
      * This value is not likely to be equivalent to wall-clock time, since a MultistageStopwatch
      * instance may be used to produce ActiveTimer instances belonging to separate,
      * concurrently-executing threads.
+     *
+     * @param timeUnit The units of the time value that should be returned. For example, if the
+     *        total elapsed time is 2,345,678 ns and the timeUnit parameter is ChronoUnit.MILLIS,
+     *        then this method will return 2.
+     *
+     * @return The total amount of time used by all timers belonging to this stopwatch, in the units
+     *         specified in the timeUnit parameter.
      */
-    // TODO change the type of timeUnit from TimeUnit to ChronoUnit.
-    public long totalElapsedTime(TimeUnit timeUnit);
+    public long totalElapsedTime(ChronoUnit timeUnit);
 
     /**
      * Get the number of times that all timers belonging to this stopwatch have been started and
      * then stopped.
-     * 
+     *
      * @return The number of start-then-stop cycles.
      */
     public long numStartStopCycles();
@@ -57,7 +63,7 @@ public interface MultistageStopwatch<T extends Enum<?>> {
 
   /**
    * Start a timer tracking one instance of the specified activity.
-   * 
+   *
    * @param timertype The type of activity that this timer tracks.
    * @return An instance of ActiveTimer that can be used to stop the timer when the activity is
    *         complete.
@@ -66,18 +72,21 @@ public interface MultistageStopwatch<T extends Enum<?>> {
 
   /**
    * Get a total of the number of elapsed nanoseconds across all timers of the specified type.
-   * 
+   *
    * @param timertype The type of activity whose total elapsed time is desired.
    * @return A quantity in units of nanoseconds.
-   * @see TimingSummary#totalElapsedTime(TimeUnit) for a convenient way to obtain values rounded to
-   *      larger units than nanoseconds.
+   * @see TimingSummary#totalElapsedTime(ChronoUnit) for a convenient way to obtain values rounded
+   *      to larger units than nanoseconds.
    */
   public long getTotalElapsedNanos(T timertype);
 
   /**
-   * Get an Iterable that will provide all of the timer types
-   * 
-   * @return
+   * Get an Iterable that will provide all of the enum values that this timer handles.
+   * <p>
+   * Typically this will be an Iterable containing all of the values of the enum, e.g.
+   * SomeEnum.values().
+   *
+   * @return All of the timer types that this timer can track.
    */
   public Iterable<T> getTimerTypes();
 

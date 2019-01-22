@@ -1,6 +1,6 @@
 package com.pervasivecode.utils.concurrent.timing;
 
-import java.util.concurrent.TimeUnit;
+import java.time.temporal.ChronoUnit;
 import com.google.auto.value.AutoValue;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 
@@ -9,9 +9,8 @@ public abstract class RoundingTimingSummary implements TimingSummary {
   public abstract long totalElapsedNanos();
 
   @Override
-  public long totalElapsedTime(TimeUnit timeUnit) {
-    long doubleTime = timeUnit.convert(totalElapsedNanos() * 2, TimeUnit.NANOSECONDS);
-    return Math.round(doubleTime / 2.0d);
+  public long totalElapsedTime(ChronoUnit timeUnit) {
+    return Math.round(((totalElapsedNanos() * 2) / timeUnit.getDuration().toNanos()) / 2.0d);
   }
 
   @Override
