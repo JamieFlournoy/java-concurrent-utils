@@ -26,23 +26,12 @@ plugins {
     id 'maven-publish'
     id 'signing'
 
-    // This adds a Gradle plugin for running benchmarks made with the
-    // JMH microbenchmarking framework.
-    id "me.champeau.gradle.jmh" version "0.4.7"
-
     // This adds tasks to measure code coverage with JaCoCo.
     id 'jacoco'
 }
 
 apply plugin: 'java-library'
 apply plugin: 'net.ltgt.errorprone'
-
-// To make the Eclipse Gradle Buildship plugin put the JMH jar on
-// the source path:
-apply plugin: 'eclipse'
-// Note: this plugin also creates Gradle tasks that generate Eclipse
-// config files, which are not as tidy as the Eclipse-Gradle-Buildship
-// generated ones. So don't use those tasks.
 
 repositories {
     jcenter()
@@ -72,10 +61,6 @@ dependencies {
 
     // To make the Eclipse Gradle Buildship plugin put Cucumber jars on the source path:
     testImplementation 'io.cucumber:cucumber-java8:4.2.0'
-
-    // Dependencies of the JMH-based benchmark code in src/jmh/java:
-    jmh 'com.google.guava:guava:27.0-jre'
-    jmh 'com.pervasivecode:time-utils:0.9'
 
     // Dependencies needed when running ErrorProne checks:
     errorprone "com.google.errorprone:error_prone_core:2.3.2"
@@ -149,21 +134,12 @@ sourceSets {
     }
 }
 
-
 // Don't build cucumber test code unless examples code builds.
 cucumberTestClasses.dependsOn 'examplesClasses'
 // Don't run Cucumber integration tests unless JUnit unit tests pass.
 cucumberTest.dependsOn 'test'
 
-// Don't bother running benchmarks if integration tests fail.
-tasks.jmh.dependsOn 'cucumberTest'
-
-jmh {
-  include = '.*Buffering.*'
-
-  // Workaround for https://github.com/melix/jmh-gradle-plugin/issues/79
-  duplicateClassesStrategy = 'warn'
-}
+check.dependsOn 'cucumberTest'
 
 // tell the ErrorProne compiler not to warn about issues in generated
 // code (e.g. AutoValue generated classes)
