@@ -12,12 +12,6 @@
 			<attribute name="gradle_used_by_scope" value="test,jmh"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" output="bin/jmh" path="src/jmh/java">
-		<attributes>
-			<attribute name="gradle_scope" value="jmh"/>
-			<attribute name="gradle_used_by_scope" value="jmh"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="src" output="bin/examples" path="src/examples/java">
 		<attributes>
 			<attribute name="gradle_scope" value="examples"/>
@@ -42,13 +36,11 @@
 			<attribute name="gradle_used_by_scope" value="cucumberTest"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" output="bin/jmh" path="src/jmh/resources">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-10/">
 		<attributes>
-			<attribute name="gradle_scope" value="jmh"/>
-			<attribute name="gradle_used_by_scope" value="jmh"/>
+			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-10/"/>
 	<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
 	<classpathentry kind="src" path="build/classes/java/main">
 		<attributes>
