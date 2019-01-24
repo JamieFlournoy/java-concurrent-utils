@@ -30,32 +30,10 @@ public class HistogramBasedStopwatchTest {
   private HistogramBasedStopwatch<TimerType> stopwatch;
   private BucketSelector<Long> bucketer;
 
-  // TODO move this to BucketSelectors
-  private static BucketSelector<Long> exponentialLong(double base, double minPower,
-      int numBuckets) {
-    Converter<Long, Double> converter = new Converter<Long, Double>() {
-      @Override
-      protected Double doForward(Long a) {
-        return a.doubleValue();
-      }
-
-      @Override
-      protected Long doBackward(Double b) {
-        if (b.isInfinite()) {
-          return b > 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
-        }
-        return b.longValue();
-      }
-
-    };
-    return BucketSelectors.transform(BucketSelectors.exponential(base, minPower, numBuckets),
-        converter);
-  }
-
   @Before
   public void setup() {
     fakeNanoSource = new FakeNanoSource();
-    bucketer = exponentialLong(5, 1, 4);
+    bucketer = BucketSelectors.exponentialLong(5, 1, 4);
     histogram = new ConcurrentHistogram<Long>(bucketer);
     Supplier<MutableHistogram<Long>> hs = () -> histogram;
     stopwatch = new HistogramBasedStopwatch<TimerType>("boil times", fakeNanoSource,
