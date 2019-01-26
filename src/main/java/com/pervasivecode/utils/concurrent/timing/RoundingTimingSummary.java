@@ -4,6 +4,10 @@ import java.time.temporal.ChronoUnit;
 import com.google.auto.value.AutoValue;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 
+/**
+ * A TimingSummary that returns values rounded to the nearest whole unit of the spceified
+ * ChronoUnit, using Math.round to perform the rounding.
+ */
 @AutoValue
 public abstract class RoundingTimingSummary implements TimingSummary {
   public abstract long totalElapsedNanos();

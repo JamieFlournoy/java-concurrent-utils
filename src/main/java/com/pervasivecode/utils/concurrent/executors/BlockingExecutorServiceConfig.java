@@ -11,7 +11,7 @@ import com.pervasivecode.utils.time.api.CurrentNanosSource;
 public abstract class BlockingExecutorServiceConfig {
   /**
    * Create an object that will build a {@link BlockingExecutorServiceConfig} instance.
-   * 
+   *
    * @return an empty config builder.
    */
   public static BlockingExecutorServiceConfig.Builder builder() {
@@ -20,7 +20,7 @@ public abstract class BlockingExecutorServiceConfig {
 
   /**
    * A time source with nanoseconds precision.
-   * 
+   *
    * @return the time source.
    */
   public abstract CurrentNanosSource currentNanosSource();
@@ -28,7 +28,7 @@ public abstract class BlockingExecutorServiceConfig {
   /**
    * The number of threads that should be created by the BlockingExecutorService for use in running
    * submitted tasks.
-   * 
+   *
    * @return the number of worker threads.
    */
   public abstract int numThreads();
@@ -36,7 +36,7 @@ public abstract class BlockingExecutorServiceConfig {
   /**
    * The format to use to name worker threads. This must contain a "%d" placeholder which will be
    * replaced with the worker's number.
-   * 
+   *
    * @return the format string.
    */
   public abstract String nameFormat();
@@ -46,7 +46,7 @@ public abstract class BlockingExecutorServiceConfig {
    * by a worker thread. When this queue is full, calls to {@link BlockingExecutorService#submit}
    * will block. When the queue is not full and the {@link BlockingExecutorService#submit} has not
    * been shut down, calls to {@link BlockingExecutorService#submit} will succeed.
-   * 
+   *
    * @return the size of the task queue to create.
    */
   public abstract int queueSize();
@@ -54,7 +54,7 @@ public abstract class BlockingExecutorServiceConfig {
   /**
    * A {@link MultistageStopwatch}{@code <}{@link Operation}{@code >} that will be used to track the
    * amount of time that tasks spend in various parts of the BlockingExecutorService's lifecycle.
-   * 
+   *
    * @return The stopwatch that will track task lifecycle times.
    */
   public abstract MultistageStopwatch<Operation> stopwatch();

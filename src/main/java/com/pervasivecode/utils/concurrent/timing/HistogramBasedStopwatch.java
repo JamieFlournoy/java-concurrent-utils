@@ -41,7 +41,7 @@ public final class HistogramBasedStopwatch<T extends Enum<?>>
   private final String name;
 
   /**
-   * Make a new instance.
+   * Create a new instance.
    *
    * @param name The name to use to label this stopwatch in formatted output.
    * @param nanoSource A time source with nanoseconds precision.

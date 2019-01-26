@@ -3,11 +3,24 @@ package com.pervasivecode.utils.concurrent.timing;
 import java.util.Objects;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
-// TODO add javadocs.
+/**
+ * This type of MultistageStopwatch keeps a total of elapsed time used by all timers for each type
+ * of operation, along with counts representing how long those operations took.
+ * <p>
+ * Example: this class would serve as the implementation for the example in
+ * {@link MultistageStopwatch}. Refer to {@link MultistageStopwatch}'s class javadoc for the
+ * example code.  
+ */
 public final class SimpleMultistageStopwatch<T extends Enum<?>>
     extends AbstractMultistageStopwatch<T> {
 
-  // TODO add javadocs.
+  /**
+   * Create a new instance.
+   *
+   * @param nanoSource A time source with nanoseconds precision.
+   * @param allEnumValues All of the values of the enum that represents the stages of this
+   *        MultistageStopwatch.
+   */
   public SimpleMultistageStopwatch(CurrentNanosSource nanoSource, T[] allEnumValues) {
     super(nanoSource, allEnumValues);
   }

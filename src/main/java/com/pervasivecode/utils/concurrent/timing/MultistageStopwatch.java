@@ -9,10 +9,10 @@ import java.time.temporal.ChronoUnit;
  * Example: a program is tracking triathletes who are running, swimming, and bicycling. The caller
  * creates an Enum called {@code Sport} with elements {@code RUNNING}, {@code SWIMMING}, and
  * {@code BICYCLING}, and uses this as the parameterized type for a
- * {@code MultistageConcurrentStopwatch}:
+ * {@code MultistageStopwatch}:
  *
  * <pre>
- * MultistageConcurrentStopwatch&lt;Sport&gt; stopwatch = ... // implementation constructed here
+ * MultistageStopwatch&lt;Sport&gt; stopwatch = ... // implementation constructed here
  * ...
  * // Now, time one athlete who just started a particular event.
  * ActiveTimer eventTimer = stopwatch.startTimer(BICYCLING);
@@ -64,7 +64,7 @@ public interface MultistageStopwatch<T extends Enum<?>> {
   /**
    * Start a timer tracking one instance of the specified activity.
    *
-   * @param timertype The type of activity that this timer tracks.
+   * @param timertype The type of activity that this timer tracks. Example: BICYCLING.
    * @return An instance of ActiveTimer that can be used to stop the timer when the activity is
    *         complete.
    */
@@ -73,7 +73,7 @@ public interface MultistageStopwatch<T extends Enum<?>> {
   /**
    * Get a total of the number of elapsed nanoseconds across all timers of the specified type.
    *
-   * @param timertype The type of activity whose total elapsed time is desired.
+   * @param timertype The type of activity whose total elapsed time is desired. Example: BICYCLING.
    * @return A quantity in units of nanoseconds.
    * @see TimingSummary#totalElapsedTime(ChronoUnit) for a convenient way to obtain values rounded
    *      to larger units than nanoseconds.
@@ -90,5 +90,15 @@ public interface MultistageStopwatch<T extends Enum<?>> {
    */
   public Iterable<T> getTimerTypes();
 
+  /**
+   * Obtain a summary of the timer activity for a given stage of the activity described by the
+   * parameterized type T.
+   *
+   * @param timertype Which stage's summary should be returned. (There is one summary per stage, so
+   *        if the enum used as the parameterized type T has four enum values, there will be four
+   *        summaries.) Example: BICYCLING.
+   *
+   * @return The summary of the specified stage's timer activity.
+   */
   public TimingSummary summarize(T timertype);
 }
