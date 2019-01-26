@@ -4,7 +4,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSumma
 import com.pervasivecode.utils.concurrent.timing.SimpleActiveTimer;
 import com.pervasivecode.utils.concurrent.timing.SimpleMultistageStopwatch;
 import com.pervasivecode.utils.concurrent.timing.StoppableTimer;
+import com.pervasivecode.utils.time.api.CurrentNanosSource;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
 import repeat.Repeat;
 import repeat.RepeatRule;
@@ -166,46 +166,60 @@ public class BlockingExecutorServiceTest {
     taskSubmittingService.shutdownNow();
   }
 
+  private static class TimerKeepingMultistageStopwatch implements MultistageStopwatch<Operation> {
+    private final CurrentNanosSource nanoSource;
+    private final ArrayList<SimpleActiveTimer> sidecarTimers;
+    private final MultistageStopwatch<Operation> wrapped;
+
+    public TimerKeepingMultistageStopwatch(CurrentNanosSource nanoSource) {
+      this.nanoSource = nanoSource;
+      this.wrapped = new SimpleMultistageStopwatch<Operation>(nanoSource, Operation.values());
+      this.sidecarTimers = new ArrayList<>();
+    }
+
+    public List<SimpleActiveTimer> sidecarTimers() {
+      return this.sidecarTimers;
+    }
+
+    @Override
+    public StoppableTimer startTimer(Operation timertype) {
+      // TODO refactor SimpleMultistageStopwatch to return a SimpleActiveTimer, and just grab a
+      // reference to that instead of making a sidecarTimer instance here.
+      SimpleActiveTimer sidecarTimer = SimpleActiveTimer.createAndStart(nanoSource);
+      sidecarTimers.add(sidecarTimer);
+      StoppableTimer wrappedTimer = wrapped.startTimer(timertype);
+      StoppableTimer doubledTimer = () -> {
+        sidecarTimer.stopTimer();
+        return wrappedTimer.stopTimer();
+      };
+      return doubledTimer;
+    }
+
+    @Override
+    public long getTotalElapsedNanos(Operation timertype) {
+      return wrapped.getTotalElapsedNanos(timertype);
+    }
+
+    @Override
+    public Iterable<Operation> getTimerTypes() {
+      return wrapped.getTimerTypes();
+    }
+
+    @Override
+    public TimingSummary summarize(Operation timertype) {
+      return wrapped.summarize(timertype);
+    }
+  }
+
   @Test
   @Repeat(times = NUM_REPEATS)
   public void execute_shouldTimeOperationsUsingMultistageStopwatch() throws Exception {
-    // TODO can all of this stopwatch/timer mockery be replaced with a testing MultistageStopwatch
-    // impl that just saves all of the Durations?
-
-    // Timers for slowTask:
-    SimpleActiveTimer slowTaskBlockTimer = new SimpleActiveTimer(nanoSource);
-    SimpleActiveTimer slowTaskQueueTimer = new SimpleActiveTimer(nanoSource);
-
-    // Timers for queuedTask:
-    SimpleActiveTimer queuedTaskBlockTimer = new SimpleActiveTimer(nanoSource);
-    SimpleActiveTimer queuedTaskQueueTimer = new SimpleActiveTimer(nanoSource);
-
-    // Timers for blockedTask:
-    SimpleActiveTimer blockedTaskBlockTimer = new SimpleActiveTimer(nanoSource);
-    SimpleActiveTimer blockedTaskQueueTimer = new SimpleActiveTimer(nanoSource);
-    // We will need to be able to observe the progress of blockedTaskBlockTimer, so that we advance
-    // the nanoSource after blockedTask has started its Opertion.BLOCK timer.
-    CountDownLatch blockTaskBlockTimerStarted = new CountDownLatch(1);
-
-    blockedTaskBlockTimer.addTimerStartedListener(() -> {
-      blockTaskBlockTimerStarted.countDown();
-    });
-
-    // This thenAnswer funkiness is just there to delay capture of the currentTimeNanoPrecision
-    // value from the nanoSource until the moment when startTimer is called by
-    // BlockingExecutorService, which is what a real MultistageStopwatch implementation would do.
-    when(mockStopwatch.startTimer(Operation.BLOCK)) //
-        .thenAnswer((i) -> slowTaskBlockTimer.startTimer()) //
-        .thenAnswer((i) -> queuedTaskBlockTimer.startTimer()) //
-        .thenAnswer((i) -> blockedTaskBlockTimer.startTimer());
-    when(mockStopwatch.startTimer(Operation.QUEUE))
-        .thenAnswer((i) -> slowTaskQueueTimer.startTimer()) //
-        .thenAnswer((i) -> queuedTaskQueueTimer.startTimer()) //
-        .thenAnswer((i) -> blockedTaskQueueTimer.startTimer());
+    TimerKeepingMultistageStopwatch testStopwatch = new TimerKeepingMultistageStopwatch(nanoSource);
 
     BlockingExecutorServiceConfig config = configBuilder() //
         .setQueueSize(1) //
         .setNumThreads(1) //
+        .setStopwatch(testStopwatch)
         .build();
     blockingExecService = new BlockingExecutorService(config);
 
@@ -234,8 +248,9 @@ public class BlockingExecutorServiceTest {
     // Make sure the enqueueAllPausingTasks is going to block before we advance the fake clock, so
     // that it experiences a fake 3-second delay when blocking.
     enqueueTaskHasStarted.await(1, SECONDS);
-    // Make sure the timer has started and grabbed a currentTimeMillis value.
-    blockTaskBlockTimerStarted.await(1, SECONDS);
+
+    // Wait until queuedTask has started its blocking timer.
+    Thread.sleep(50); // TODO find a better way to do this.
 
     // Advance the fake clock by 3 seconds, then let slowTask finish. This will let queuedTask run,
     // which in turn will unblock enqueueAllPausingTasks.
@@ -247,18 +262,26 @@ public class BlockingExecutorServiceTest {
     blockedTask.awaitTaskCompletion(1, SECONDS);
     // We now expect that each timer experienced different amounts of blocking and queueing delays.
 
+    List<SimpleActiveTimer> timers = testStopwatch.sidecarTimers();
+
     // slowTask should not have blocked, and should have whizzed through the queue straight to the
     // executor thread.
+    SimpleActiveTimer slowTaskBlockTimer = timers.get(0);
+    SimpleActiveTimer slowTaskQueueTimer = timers.get(1);
     assertThat(slowTaskBlockTimer.elapsed()).isLessThan(Duration.ofMillis(1));
     assertThat(slowTaskQueueTimer.elapsed()).isLessThan(Duration.ofMillis(1));
 
     // queuedTask should not have blocked, but should have spent at least 3 seconds in the queue.
+    SimpleActiveTimer queuedTaskBlockTimer = timers.get(2);
+    SimpleActiveTimer queuedTaskQueueTimer = timers.get(3);
     assertThat(queuedTaskBlockTimer.elapsed()).isLessThan(Duration.ofMillis(1));
     assertThat(queuedTaskQueueTimer.elapsed()).isGreaterThan(Duration.ofSeconds(3));
     assertThat(queuedTaskQueueTimer.elapsed()).isLessThan(Duration.ofMillis(3001));
 
     // blockedTask should have blocked for at least 3 seconds, but should not have spent much time
     // in the queue since it just had to wait for queuedTask to execute.
+    SimpleActiveTimer blockedTaskBlockTimer = timers.get(4);
+    SimpleActiveTimer blockedTaskQueueTimer = timers.get(5);
     assertThat(blockedTaskBlockTimer.elapsed()).isGreaterThan(Duration.ofSeconds(3));
     assertThat(blockedTaskBlockTimer.elapsed()).isLessThan(Duration.ofSeconds(4));
     assertThat(blockedTaskQueueTimer.elapsed()).isLessThan(Duration.ofMillis(1));

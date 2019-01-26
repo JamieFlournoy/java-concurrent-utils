@@ -9,7 +9,6 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
-import com.google.common.base.Converter;
 import com.google.common.truth.Truth;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 import com.pervasivecode.utils.stats.histogram.BucketSelector;
@@ -19,6 +18,8 @@ import com.pervasivecode.utils.stats.histogram.Histogram;
 import com.pervasivecode.utils.stats.histogram.MutableHistogram;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 
 public class HistogramBasedStopwatchTest {
   public enum TimerType {
@@ -131,9 +132,16 @@ public class HistogramBasedStopwatchTest {
     this.fakeNanoSource.incrementTimeNanos(100); // must be a really small egg to boil that quickly
     Duration eggTime = t.stopTimer();
 
-    Histogram<Long> histogram = stopwatch.timingHistogram(HARD_BOILED_EGG);
+    Histogram<Long> histogram = stopwatch.timingHistogramFor(HARD_BOILED_EGG);
     int expectedIndex = bucketer.bucketIndexFor(eggTime.toMillis());
     assertThat(expectedIndex).isEqualTo(0);
     assertThat(histogram.countInBucket(expectedIndex)).isEqualTo(1);
+  }
+
+  @Test
+  public void equals_shouldWork() {
+    EqualsVerifier.forClass(HistogramBasedStopwatch.class)
+        .suppress(Warning.NONFINAL_FIELDS)
+        .verify();
   }
 }

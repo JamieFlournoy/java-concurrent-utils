@@ -7,6 +7,8 @@ import org.junit.Before;
 import org.junit.Test;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 
 public class SimpleMultistageStopwatchTest {
   // TODO extract common stuff to a helper, and use that to test HistogramBasedStopwatch too.
@@ -58,6 +60,14 @@ public class SimpleMultistageStopwatchTest {
     StoppableTimer chopCarrotsTimer = stopwatch.startTimer(RecipeStep.CHOP);
     chopCarrotsTimer.stopTimer();
     chopCarrotsTimer.stopTimer();
+  }
+
+  @Test(expected = IllegalStateException.class)
+  public void getTotalElapsedNanos_onRunningTimer_shouldThrow() {
+    SimpleMultistageStopwatch<RecipeStep> stopwatch =
+        new SimpleMultistageStopwatch<>(nanoSource, RecipeStep.values());
+    stopwatch.startTimer(RecipeStep.CHOP);
+    stopwatch.getTotalElapsedNanos(RecipeStep.CHOP);
   }
 
   @Test
@@ -123,5 +133,12 @@ public class SimpleMultistageStopwatchTest {
     assertThat(bakeSummary.numStartStopCycles()).isEqualTo(1);
     assertThat(bakeSummary.totalElapsedTime(ChronoUnit.NANOS))
         .isEqualTo(bakeDuration.toNanos());
+  }
+
+  @Test
+  public void equals_shouldWork() {
+    EqualsVerifier.forClass(SimpleMultistageStopwatch.class)
+        .suppress(Warning.NONFINAL_FIELDS)
+        .verify();
   }
 }

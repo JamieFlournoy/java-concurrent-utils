@@ -8,17 +8,30 @@ import java.util.List;
 import java.util.Objects;
 import com.pervasivecode.utils.time.api.CurrentNanosSource;
 
-public class SimpleActiveTimer implements StoppableTimer, ListenableTimer, QueryableTimer {
+/**
+ * A timer implementation that is {@link StoppableTimer stoppable}, {@link QueryableTimer
+ * queryable}, and {@link ListenableTimer listenable}.
+ * <p>
+ * This is a "one-shot" timer: it can only be started once, and once it's stopped, it can't be
+ * started again.
+ * <p>
+ * Instances of SimpleActiveTimer are not safe for use by multiple threads.
+ */
+public final class SimpleActiveTimer implements StoppableTimer, ListenableTimer, QueryableTimer {
   private enum TimerState {
     NEW, RUNNING, STOPPED
   }
 
-  public static interface StateChangeListener {
-    public void stateChanged();
-  }
-
+  /**
+   * Create an instance and start it.
+   *
+   * @param nanoSource A source of the current time, represented in nanoseconds.
+   * @return A SimpleActiveTimer instance that has been started.
+   */
   public static SimpleActiveTimer createAndStart(CurrentNanosSource nanoSource) {
-    return new SimpleActiveTimer(nanoSource).startTimer();
+    SimpleActiveTimer timer = new SimpleActiveTimer(nanoSource);
+    timer.startTimer();
+    return timer;
   }
 
   private TimerState currentState = TimerState.NEW;
@@ -28,6 +41,11 @@ public class SimpleActiveTimer implements StoppableTimer, ListenableTimer, Query
   protected long startTime = 0L;
   protected long endTime = 0L;
 
+  /**
+   * Create an instance that is not started yet.
+   *
+   * @param nanoSource A source of the current time, represented in nanoseconds.
+   */
   public SimpleActiveTimer(CurrentNanosSource nanoSource) {
     this.nanoSource = checkNotNull(nanoSource);
     this.startListeners = new ArrayList<StateChangeListener>();
@@ -36,11 +54,17 @@ public class SimpleActiveTimer implements StoppableTimer, ListenableTimer, Query
 
   @Override
   public void addTimerStartedListener(StateChangeListener timerStartedListener) {
+    if (hasBeenStarted()) {
+      timerStartedListener.stateChanged();
+    }
     startListeners.add(checkNotNull(timerStartedListener));
   }
 
   @Override
   public void addTimerStoppedListener(StateChangeListener timerStoppedListener) {
+    if (isStopped()) {
+      timerStoppedListener.stateChanged();
+    }
     stopListeners.add(checkNotNull(timerStoppedListener));
   }
 
@@ -59,20 +83,23 @@ public class SimpleActiveTimer implements StoppableTimer, ListenableTimer, Query
     return currentState == TimerState.STOPPED;
   }
 
-  @Deprecated
-  protected void changeState(TimerState toState, List<StateChangeListener> listenersToNotify) {
+  private void changeState(TimerState toState, List<StateChangeListener> listenersToNotify) {
     currentState = toState;
     for (StateChangeListener listener : listenersToNotify) {
       listener.stateChanged();
     }
   }
 
-  public SimpleActiveTimer startTimer() {
+  /**
+   * Start the timer.
+   *
+   * @throws IllegalStateException if the timer has already been started.
+   */
+  public void startTimer() {
     checkState(currentState == TimerState.NEW, "Timer can't be started because it's in state '%s'.",
         currentState.name().toLowerCase());
     changeState(TimerState.RUNNING, this.startListeners);
     startTime = nanoSource.currentTimeNanoPrecision();
-    return this;
   }
 
   @Override
@@ -121,6 +148,23 @@ public class SimpleActiveTimer implements StoppableTimer, ListenableTimer, Query
         endTime);
   }
 
+  /**
+   * Determine whether an instance of another class possibly be equal to an instance of this class.
+   * <p>
+   * This is used to ensure that instances of subclasses of this class are not considered equal to
+   * instances of this class, unless the subclass explicitly states that its instances can be
+   * treated interchangeably with instances of this class, via its own {@link #canEqual} method.
+   * <p>
+   * For more info see: <a href=
+   * "https://jqno.nl/equalsverifier/errormessages/coverage-is-not-100-percent/#using-canequal">
+   * EqualsVerifier Coverage is not 100%: Using canEqual</a> and
+   *
+   * <a href="https://www.artima.com/lejava/articles/equality.html">How to Write an Equality Method
+   * in Java </a>.
+   *
+   * @param other An object that might have the ability to be equal to an instance of this class.
+   * @return True if the other object could be equal to this instance.
+   */
   public boolean canEqual(Object other) {
     return (other instanceof SimpleActiveTimer);
   }

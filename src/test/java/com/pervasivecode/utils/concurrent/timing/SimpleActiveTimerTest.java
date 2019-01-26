@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import com.google.common.truth.Truth;
-import com.pervasivecode.utils.concurrent.timing.SimpleActiveTimer.StateChangeListener;
+import com.pervasivecode.utils.concurrent.timing.ListenableTimer.StateChangeListener;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -144,7 +144,7 @@ public class SimpleActiveTimerTest {
   }
 
   @Test
-  public void stopTimer_whenTimerIsRunning_shouldNotifyStateChangeListeners() {
+  public void stopTimer_whenTimerIsRunning_shouldNotifyStoppedListeners() {
     FakeNanoSource nanoSource = new FakeNanoSource();
     SimpleActiveTimer timer = SimpleActiveTimer.createAndStart(nanoSource);
 
@@ -154,8 +154,9 @@ public class SimpleActiveTimerTest {
     StateChangeListener stopListener = () -> timesStopListenerWasCalled.incrementAndGet();
     timer.addTimerStartedListener(startListener);
     timer.addTimerStoppedListener(stopListener);
+    assertThat(timesStartListenerWasCalled.get()).isEqualTo(1);
     timer.stopTimer();
-    assertThat(timesStartListenerWasCalled.get()).isEqualTo(0);
+    assertThat(timesStartListenerWasCalled.get()).isEqualTo(1);
     assertThat(timesStopListenerWasCalled.get()).isEqualTo(1);
   }
 
@@ -222,14 +223,47 @@ public class SimpleActiveTimerTest {
 
   // --------------------------------------------------------------------------
   //
+  // Tests for addTimerStartedListener
+  //
+  // --------------------------------------------------------------------------
+
+  @Test
+  public void addTimerStartedListener_whenTimerIsAlreadyStarted_shouldRunListenerImmediately() {
+    SimpleActiveTimer timer = SimpleActiveTimer.createAndStart(new FakeNanoSource());
+    assertThat(timer.hasBeenStarted()).isTrue();
+
+    AtomicInteger timesStartListenerWasCalled = new AtomicInteger(0);
+    StateChangeListener startListener = () -> timesStartListenerWasCalled.incrementAndGet();
+    timer.addTimerStartedListener(startListener);
+    assertThat(timesStartListenerWasCalled.get()).isEqualTo(1);
+  }
+
+  // --------------------------------------------------------------------------
+  //
+  // Tests for addTimerStoppedListener
+  //
+  // --------------------------------------------------------------------------
+
+  @Test
+  public void addTimerStoppedListener_whenTimerIsAlreadyStopped_shouldRunListenerImmediately() {
+    SimpleActiveTimer timer = SimpleActiveTimer.createAndStart(new FakeNanoSource());
+    timer.stopTimer();
+    assertThat(timer.isStopped()).isTrue();
+
+    AtomicInteger timesStopListenerWasCalled = new AtomicInteger(0);
+    StateChangeListener stopListener = () -> timesStopListenerWasCalled.incrementAndGet();
+    timer.addTimerStoppedListener(stopListener);
+    assertThat(timesStopListenerWasCalled.get()).isEqualTo(1);
+  }
+
+  // --------------------------------------------------------------------------
+  //
   // Tests for equals
   //
   // --------------------------------------------------------------------------
 
   @Test
   public void equals_shouldWork() {
-    EqualsVerifier.forClass(SimpleActiveTimer.class)
-        .withRedefinedSubclass(SimpleMultistageTimer.class).suppress(Warning.NONFINAL_FIELDS)
-        .verify();
+    EqualsVerifier.forClass(SimpleActiveTimer.class).suppress(Warning.NONFINAL_FIELDS).verify();
   }
 }
