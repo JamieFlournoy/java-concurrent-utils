@@ -6,7 +6,6 @@ import static com.pervasivecode.utils.concurrent.timing.HistogramBasedStopwatchT
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import java.time.Duration;
-import java.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import com.google.common.truth.Truth;
@@ -15,8 +14,7 @@ import com.pervasivecode.utils.stats.histogram.BucketSelector;
 import com.pervasivecode.utils.stats.histogram.BucketSelectors;
 import com.pervasivecode.utils.stats.histogram.ConcurrentHistogram;
 import com.pervasivecode.utils.stats.histogram.Histogram;
-import com.pervasivecode.utils.stats.histogram.MutableHistogram;
-import com.pervasivecode.utils.time.api.CurrentNanosSource;
+import com.pervasivecode.utils.time.CurrentNanosSource;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
@@ -27,7 +25,6 @@ public class HistogramBasedStopwatchTest {
   }
 
   private FakeNanoSource fakeNanoSource;
-  private MutableHistogram<Long> histogram;
   private HistogramBasedStopwatch<TimerType> stopwatch;
   private BucketSelector<Long> bucketer;
 
@@ -35,10 +32,9 @@ public class HistogramBasedStopwatchTest {
   public void setup() {
     fakeNanoSource = new FakeNanoSource();
     bucketer = BucketSelectors.exponentialLong(5, 1, 4);
-    histogram = new ConcurrentHistogram<Long>(bucketer);
-    Supplier<MutableHistogram<Long>> hs = () -> histogram;
-    stopwatch = new HistogramBasedStopwatch<TimerType>("boil times", fakeNanoSource,
-        TimerType.values(), hs);
+    TimerType[] allEnumValues = TimerType.values();
+    stopwatch = new HistogramBasedStopwatch<TimerType>("boil times", fakeNanoSource, allEnumValues,
+        () -> new ConcurrentHistogram<Long>(bucketer));
   }
 
   @Test
@@ -53,9 +49,9 @@ public class HistogramBasedStopwatchTest {
   }
 
   @Test(expected = IllegalStateException.class)
-  public void getTotalElapsedNanos_onRunningTimer_shouldThrow() {
+  public void getTotalElapsedTime_onRunningTimer_shouldThrow() {
     stopwatch.startTimer(HARD_BOILED_EGG);
-    stopwatch.getTotalElapsedNanos(HARD_BOILED_EGG);
+    stopwatch.summarize(HARD_BOILED_EGG).totalElapsedTime();
   }
 
   @Test
@@ -63,7 +59,8 @@ public class HistogramBasedStopwatchTest {
     StoppableTimer t = stopwatch.startTimer(HARD_BOILED_EGG);
     fakeNanoSource.incrementTimeNanos(333L);
     t.stopTimer();
-    assertThat(stopwatch.getTotalElapsedNanos(HARD_BOILED_EGG)).isGreaterThan(0L);
+    assertThat(stopwatch.summarize(HARD_BOILED_EGG).totalElapsedTime())
+        .isGreaterThan(Duration.ZERO);
   }
 
   @Test
@@ -78,13 +75,18 @@ public class HistogramBasedStopwatchTest {
     fakeNanoSource.incrementTimeNanos(durationNanos - 1);
     t.stopTimer();
     TimingSummary summary1 = stopwatch.summarize(HARD_BOILED_EGG);
-    TimingSummary expectedSummary1 = RoundingTimingSummary.builder().setNumStartStopCycles(1)
-        .setTotalElapsedNanos(durationNanos).build();
+    TimingSummary expectedSummary1 = SimpleTimingSummary.builder() //
+        .setNumStartStopCycles(1) //
+        .setTotalElapsedTime(Duration.ofNanos(durationNanos)) //
+        .build();
     assertThat(summary1).isEqualTo(expectedSummary1);
 
     TimingSummary summary2 = stopwatch.summarize(BAKED_POTATO);
     TimingSummary expectedSummary2 =
-        RoundingTimingSummary.builder().setNumStartStopCycles(0).setTotalElapsedNanos(0).build();
+        SimpleTimingSummary.builder() //
+        .setNumStartStopCycles(0) //
+        .setTotalElapsedTime(Duration.ZERO) //
+        .build();
     assertThat(summary2).isEqualTo(expectedSummary2);
   }
 
@@ -107,7 +109,7 @@ public class HistogramBasedStopwatchTest {
     long nanos = 12345L;
     when(mockNanoSource.currentTimeNanoPrecision()).thenReturn(nanos);
     stopwatch = new HistogramBasedStopwatch<>("boil times", mockNanoSource, TimerType.values(),
-        () -> histogram);
+        () -> new ConcurrentHistogram<Long>(bucketer));
     StoppableTimer t = stopwatch.startTimer(HARD_BOILED_EGG);
     try {
       t.stopTimer();

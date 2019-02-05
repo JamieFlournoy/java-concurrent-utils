@@ -27,7 +27,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch;
 import com.pervasivecode.utils.concurrent.timing.StoppableTimer;
-import com.pervasivecode.utils.time.api.CurrentNanosSource;
+import com.pervasivecode.utils.time.CurrentNanosSource;
 
 /**
  * Wrap a ThreadPoolExecutor with an ExecutorService implementation that blocks the thread

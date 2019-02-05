@@ -4,9 +4,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.auto.value.AutoValue;
 import com.pervasivecode.utils.concurrent.executors.BlockingExecutorService.Operation;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch;
-import com.pervasivecode.utils.time.api.CurrentNanosSource;
+import com.pervasivecode.utils.time.CurrentNanosSource;
 
-/** This object holds configuration information for a BlockingExecutorService instance. */
+/** This object holds configuration information for a {@link BlockingExecutorService} instance. */
 @AutoValue
 public abstract class BlockingExecutorServiceConfig {
   /**

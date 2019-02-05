@@ -1,7 +1,7 @@
 package com.pervasivecode.utils.concurrent.timing;
 
 import java.util.Objects;
-import com.pervasivecode.utils.time.api.CurrentNanosSource;
+import com.pervasivecode.utils.time.CurrentNanosSource;
 
 /**
  * This type of MultistageStopwatch keeps a total of elapsed time used by all timers for each type
@@ -39,8 +39,7 @@ public final class SimpleMultistageStopwatch<T extends Enum<?>>
       return false;
     }
     SimpleMultistageStopwatch<?> otherTimer = (SimpleMultistageStopwatch<?>) other;
-    return otherTimer.canEqual(this) //
-        && Objects.equals(numRunningTimers, otherTimer.numRunningTimers)
+    return Objects.equals(numRunningTimers, otherTimer.numRunningTimers)
         && Objects.equals(numStartStopCycles, otherTimer.numStartStopCycles)
         && Objects.equals(totalNanos, otherTimer.totalNanos)
         && Objects.equals(allEnumValues, otherTimer.allEnumValues)
@@ -51,10 +50,5 @@ public final class SimpleMultistageStopwatch<T extends Enum<?>>
   public int hashCode() {
     return Objects.hash(numRunningTimers, numStartStopCycles, totalNanos, allEnumValues,
         nanoSource);
-  }
-
-  @Override
-  public boolean canEqual(Object other) {
-    return (other instanceof SimpleMultistageStopwatch);
   }
 }

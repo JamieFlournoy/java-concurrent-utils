@@ -5,7 +5,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -38,7 +37,7 @@ import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSumma
 import com.pervasivecode.utils.concurrent.timing.SimpleActiveTimer;
 import com.pervasivecode.utils.concurrent.timing.SimpleMultistageStopwatch;
 import com.pervasivecode.utils.concurrent.timing.StoppableTimer;
-import com.pervasivecode.utils.time.api.CurrentNanosSource;
+import com.pervasivecode.utils.time.CurrentNanosSource;
 import com.pervasivecode.utils.time.testing.FakeNanoSource;
 import repeat.Repeat;
 import repeat.RepeatRule;
@@ -193,11 +192,6 @@ public class BlockingExecutorServiceTest {
         return wrappedTimer.stopTimer();
       };
       return doubledTimer;
-    }
-
-    @Override
-    public long getTotalElapsedNanos(Operation timertype) {
-      return wrapped.getTotalElapsedNanos(timertype);
     }
 
     @Override
@@ -603,11 +597,11 @@ public class BlockingExecutorServiceTest {
 
     TimingSummary queueTiming = stopwatch.summarize(Operation.QUEUE);
     assertThat(queueTiming.numStartStopCycles()).isEqualTo(1);
-    assertThat(queueTiming.totalElapsedTime(ChronoUnit.NANOS)).isAtLeast(1L);
+    assertThat(queueTiming.totalElapsedTime().toNanos()).isAtLeast(1L);
 
     TimingSummary blockTiming = stopwatch.summarize(Operation.BLOCK);
     assertThat(blockTiming.numStartStopCycles()).isEqualTo(1);
-    assertThat(blockTiming.totalElapsedTime(ChronoUnit.NANOS)).isAtLeast(1L);
+    assertThat(blockTiming.totalElapsedTime().toNanos()).isAtLeast(1L);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

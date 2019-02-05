@@ -1,6 +1,7 @@
 package com.pervasivecode.utils.concurrent.timing;
 
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
+import com.pervasivecode.utils.concurrent.example.TriathlonTimingExample;
 
 /**
  * This stopwatch manages multiple concurrent timers tracking each stage of a user-defined
@@ -8,8 +9,7 @@ import java.time.temporal.ChronoUnit;
  * <p>
  * Example: a program is tracking triathletes who are running, swimming, and bicycling. The caller
  * creates an Enum called {@code Sport} with elements {@code RUNNING}, {@code SWIMMING}, and
- * {@code BICYCLING}, and uses this as the parameterized type for a
- * {@code MultistageStopwatch}:
+ * {@code BICYCLING}, and uses this as the parameterized type for a {@code MultistageStopwatch}:
  *
  * <pre>
  * MultistageStopwatch&lt;Sport&gt; stopwatch = ... // implementation constructed here
@@ -25,32 +25,34 @@ import java.time.temporal.ChronoUnit;
  * System.out.println("Total amount of time spent bicycling: " + cyclingSummary.totalElapsedTime());
  * System.out.println("Total number of cycling race legs: " + cyclingSummary.numStartStopCycles());
  *
- * long averageSeconds = cyclingSummary.totalElapsedTime() / cyclingSummary.numStartStopCycles();
+ * Duration averageTime =
+ *     cyclingSummary.totalElapsedTime().dividedBy(cyclingSummary.numStartStopCycles());
  * System.out.println(String.format(
- *     "Average bicycling race leg time across all competitors: %d seconds", averageSeconds));
+ *     "Average bicycling race leg time across all competitors: %d seconds",
+ *     averageTime.toSeconds()));
  * </pre>
+ * See {@link TriathlonTimingExample} for a more complete example.
  *
  * @param <T> The enumeration of individual phases that are contained in the measured activities.
+ *
+ * @see TriathlonTimingExample
  */
 public interface MultistageStopwatch<T extends Enum<?>> {
+  /**
+   * A summary of the timer activity for one stage of multistage operation.
+   */
   public interface TimingSummary {
     /**
      * Get the total amount of time used by all start-stop cycles of all timers belonging to this
-     * stowpatch. The value is rounded to the nearest integer of whatever units are specified in the
-     * timeUnit parameter.
+     * stopwatch.
      * <p>
      * This value is not likely to be equivalent to wall-clock time, since a MultistageStopwatch
      * instance may be used to produce ActiveTimer instances belonging to separate,
      * concurrently-executing threads.
      *
-     * @param timeUnit The units of the time value that should be returned. For example, if the
-     *        total elapsed time is 2,345,678 ns and the timeUnit parameter is ChronoUnit.MILLIS,
-     *        then this method will return 2.
-     *
-     * @return The total amount of time used by all timers belonging to this stopwatch, in the units
-     *         specified in the timeUnit parameter.
+     * @return The total amount of time used by all timers belonging to this stopwatch.
      */
-    public long totalElapsedTime(ChronoUnit timeUnit);
+    public Duration totalElapsedTime();
 
     /**
      * Get the number of times that all timers belonging to this stopwatch have been started and
@@ -69,16 +71,6 @@ public interface MultistageStopwatch<T extends Enum<?>> {
    *         complete.
    */
   public StoppableTimer startTimer(T timertype);
-
-  /**
-   * Get a total of the number of elapsed nanoseconds across all timers of the specified type.
-   *
-   * @param timertype The type of activity whose total elapsed time is desired. Example: BICYCLING.
-   * @return A quantity in units of nanoseconds.
-   * @see TimingSummary#totalElapsedTime(ChronoUnit) for a convenient way to obtain values rounded
-   *      to larger units than nanoseconds.
-   */
-  public long getTotalElapsedNanos(T timertype);
 
   /**
    * Get an Iterable that will provide all of the enum values that this timer handles.

@@ -37,14 +37,14 @@ repositories {
     jcenter()
     mavenCentral()
 
-    // maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
 }
 
 dependencies {
     // Dependencies needed at runtime and compile-time, but not
     // exposed in the API of this library:
     implementation 'com.google.guava:guava:27.0-jre'
-    implementation 'com.pervasivecode:time-utils:0.9'
+    implementation 'com.pervasivecode:time-utils:0.11-SNAPSHOT'
     implementation 'com.pervasivecode:stats-utils:0.9.2'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.2'
 
@@ -63,11 +63,6 @@ dependencies {
 
     // Dependencies needed when running ErrorProne checks:
     errorprone "com.google.errorprone:error_prone_core:2.3.2"
-
-    // ###########################
-    //  DEPENDENCIES TO ELIMINATE
-    // ###########################
-    compile 'joda-time:joda-time:2.9.6'
 }
 
 // Example code shouldn't be put in the library .jar, but should be compiled
@@ -116,7 +111,7 @@ cucumber {
     maxParallelForks = 4
 }
 cucumberTest {
-    stepDefinitionRoots = ['com.pervasivecode.utils.concurrent.test.cucumber.steps']
+    stepDefinitionRoots = ['com.pervasivecode.utils.concurrent.cucumber']
 }
 dependencies {
     cucumberTestImplementation 'io.cucumber:cucumber-java8:4.2.0'
@@ -144,7 +139,6 @@ check.dependsOn 'cucumberTest'
 // code (e.g. AutoValue generated classes)
 tasks.withType(JavaCompile).configureEach {
   options.errorprone.disableWarningsInGeneratedCode = true
-  // options.errorprone.excludedPaths = ".*build\\/generated\\/source\\/.*"
 }
 
 // Generate Javadoc documentation files from Java source code.

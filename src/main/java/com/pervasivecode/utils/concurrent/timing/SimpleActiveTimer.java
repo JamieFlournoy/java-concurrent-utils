@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import com.pervasivecode.utils.time.api.CurrentNanosSource;
+import com.pervasivecode.utils.time.CurrentNanosSource;
 
 /**
  * A timer implementation that is {@link StoppableTimer stoppable}, {@link QueryableTimer
@@ -133,8 +133,7 @@ public final class SimpleActiveTimer implements StoppableTimer, ListenableTimer,
       return false;
     }
     SimpleActiveTimer otherTimer = (SimpleActiveTimer) other;
-    return otherTimer.canEqual(this) //
-        && (otherTimer.currentState == this.currentState)
+    return (otherTimer.currentState == this.currentState)
         && (otherTimer.startTime == this.startTime) //
         && (otherTimer.endTime == this.endTime)
         && Objects.equals(otherTimer.nanoSource, this.nanoSource)
@@ -146,26 +145,5 @@ public final class SimpleActiveTimer implements StoppableTimer, ListenableTimer,
   public int hashCode() {
     return Objects.hash(currentState, nanoSource, startListeners, stopListeners, startTime,
         endTime);
-  }
-
-  /**
-   * Determine whether an instance of another class possibly be equal to an instance of this class.
-   * <p>
-   * This is used to ensure that instances of subclasses of this class are not considered equal to
-   * instances of this class, unless the subclass explicitly states that its instances can be
-   * treated interchangeably with instances of this class, via its own {@link #canEqual} method.
-   * <p>
-   * For more info see: <a href=
-   * "https://jqno.nl/equalsverifier/errormessages/coverage-is-not-100-percent/#using-canequal">
-   * EqualsVerifier Coverage is not 100%: Using canEqual</a> and
-   *
-   * <a href="https://www.artima.com/lejava/articles/equality.html">How to Write an Equality Method
-   * in Java </a>.
-   *
-   * @param other An object that might have the ability to be equal to an instance of this class.
-   * @return True if the other object could be equal to this instance.
-   */
-  public boolean canEqual(Object other) {
-    return (other instanceof SimpleActiveTimer);
   }
 }

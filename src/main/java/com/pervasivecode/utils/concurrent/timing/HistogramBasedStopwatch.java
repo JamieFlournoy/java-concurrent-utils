@@ -8,7 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import com.pervasivecode.utils.stats.histogram.Histogram;
 import com.pervasivecode.utils.stats.histogram.ImmutableHistogram;
 import com.pervasivecode.utils.stats.histogram.MutableHistogram;
-import com.pervasivecode.utils.time.api.CurrentNanosSource;
+import com.pervasivecode.utils.time.CurrentNanosSource;
 
 /**
  * This type of MultistageStopwatch populates a timing {@link Histogram} for each type of operation
@@ -105,8 +105,7 @@ public final class HistogramBasedStopwatch<T extends Enum<?>>
       return false;
     }
     HistogramBasedStopwatch<?> otherTimer = (HistogramBasedStopwatch<?>) other;
-    return otherTimer.canEqual(this) //
-        && Objects.equals(numRunningTimers, otherTimer.numRunningTimers)
+    return Objects.equals(numRunningTimers, otherTimer.numRunningTimers)
         && Objects.equals(numStartStopCycles, otherTimer.numStartStopCycles)
         && Objects.equals(totalNanos, otherTimer.totalNanos)
         && Objects.equals(allEnumValues, otherTimer.allEnumValues)
@@ -119,10 +118,5 @@ public final class HistogramBasedStopwatch<T extends Enum<?>>
   public int hashCode() {
     return Objects.hash(numRunningTimers, numStartStopCycles, totalNanos, allEnumValues, nanoSource,
         durationHistogramsByType, name);
-  }
-
-  @Override
-  public boolean canEqual(Object other) {
-    return (other instanceof HistogramBasedStopwatch);
   }
 }

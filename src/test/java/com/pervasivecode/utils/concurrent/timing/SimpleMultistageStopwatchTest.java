@@ -2,7 +2,6 @@ package com.pervasivecode.utils.concurrent.timing;
 
 import static com.google.common.truth.Truth.assertThat;
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import org.junit.Before;
 import org.junit.Test;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
@@ -63,15 +62,15 @@ public class SimpleMultistageStopwatchTest {
   }
 
   @Test(expected = IllegalStateException.class)
-  public void getTotalElapsedNanos_onRunningTimer_shouldThrow() {
+  public void getTotalElapsedTime_onRunningTimer_shouldThrow() {
     SimpleMultistageStopwatch<RecipeStep> stopwatch =
         new SimpleMultistageStopwatch<>(nanoSource, RecipeStep.values());
     stopwatch.startTimer(RecipeStep.CHOP);
-    stopwatch.getTotalElapsedNanos(RecipeStep.CHOP);
+    stopwatch.summarize(RecipeStep.CHOP).totalElapsedTime();
   }
 
   @Test
-  public void getTotalElapsedNanos_shouldReturnSumOfTimerDurations() {
+  public void getTotalElapsedTime_shouldReturnSumOfTimerDurations() {
     SimpleMultistageStopwatch<RecipeStep> stopwatch =
         new SimpleMultistageStopwatch<>(nanoSource, RecipeStep.values());
 
@@ -84,8 +83,8 @@ public class SimpleMultistageStopwatchTest {
     nanoSource.incrementTimeNanos(TEST_TIMER_DURATION_NANOS);
     Duration timeToChopCarrots = chopCarrotsTimer.stopTimer();
 
-    assertThat(stopwatch.getTotalElapsedNanos(RecipeStep.CHOP))
-        .isEqualTo(timeToChopOnions.plus(timeToChopCarrots).toNanos());
+    assertThat(stopwatch.summarize(RecipeStep.CHOP).totalElapsedTime())
+        .isEqualTo(timeToChopOnions.plus(timeToChopCarrots));
   }
 
   @Test
@@ -127,11 +126,11 @@ public class SimpleMultistageStopwatchTest {
     TimingSummary bakeSummary = stopwatch.summarize(RecipeStep.BAKE);
 
     assertThat(mixSummary.numStartStopCycles()).isEqualTo(3);
-    assertThat(mixSummary.totalElapsedTime(ChronoUnit.NANOS))
+    assertThat(mixSummary.totalElapsedTime().toNanos())
         .isEqualTo(sumOfMixDurations.toNanos());
 
     assertThat(bakeSummary.numStartStopCycles()).isEqualTo(1);
-    assertThat(bakeSummary.totalElapsedTime(ChronoUnit.NANOS))
+    assertThat(bakeSummary.totalElapsedTime().toNanos())
         .isEqualTo(bakeDuration.toNanos());
   }
 
