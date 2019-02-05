@@ -1,11 +1,12 @@
 package com.pervasivecode.utils.concurrent.timing;
 
+import static com.google.common.base.Preconditions.checkState;
 import java.time.Duration;
 import com.google.auto.value.AutoValue;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 
 /**
- * A basic TimingSummary implememtation that just  
+ * A basic TimingSummary implememtation that just
  */
 @AutoValue
 public abstract class SimpleTimingSummary implements TimingSummary {
@@ -29,8 +30,23 @@ public abstract class SimpleTimingSummary implements TimingSummary {
 
     public abstract SimpleTimingSummary.Builder setNumStartStopCycles(long numStartStopCycles);
 
-    public abstract SimpleTimingSummary build();
+    protected abstract SimpleTimingSummary buildInternal();
+    
+    public SimpleTimingSummary build() {
+      SimpleTimingSummary summary = buildInternal();
+      
+      long cycles = summary.numStartStopCycles();
+      Duration time = summary.totalElapsedTime();
 
-    // TODO validate that if cycles == 0, elapsed == 0.
+      checkState(cycles >= 0, "numStartStopCycles must be nonnegative. Got: %s", cycles);
+      checkState(!time.isNegative(), "totalElapsedTime must be nonnegative. Got: %s", time);
+
+      if (cycles == 0) {
+        checkState(time.equals(Duration.ZERO),
+            "Zero start-stop cycles must have a total elapsed time of zero. Elapsed: %s", time);
+      }
+      
+      return summary;
+    }
   }
 }

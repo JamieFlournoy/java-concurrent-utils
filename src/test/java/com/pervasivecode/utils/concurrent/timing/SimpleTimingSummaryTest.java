@@ -1,31 +1,61 @@
 package com.pervasivecode.utils.concurrent.timing;
 
-import org.junit.Ignore;
+import static com.google.common.truth.Truth.assertThat;
+import java.time.Duration;
 import org.junit.Test;
 import com.google.common.truth.Truth;
+import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 
 public class SimpleTimingSummaryTest {
-  @Ignore
   @Test
   public void build_withZeroCyclesAndNonzeroTotalElapsed_shouldThrow() {
-    Truth.assert_().fail();
+    try {
+      SimpleTimingSummary.builder() //
+          .setNumStartStopCycles(0) //
+          .setTotalElapsedTime(Duration.ofSeconds(1)) //
+          .build();
+      Truth.assert_().fail("Expected an exception here.");
+    } catch (IllegalStateException ise) {
+      assertThat(ise).hasMessageThat().contains("zero");
+    }
   }
 
-  @Ignore
   @Test
   public void build_withNegativeCycles_shouldThrow() {
-    Truth.assert_().fail();
+    try {
+      SimpleTimingSummary.builder() //
+          .setNumStartStopCycles(-1) //
+          .setTotalElapsedTime(Duration.ofSeconds(1)) //
+          .build();
+      Truth.assert_().fail("Expected an exception here.");
+    } catch (IllegalStateException ise) {
+      assertThat(ise).hasMessageThat().contains("negative");
+      assertThat(ise).hasMessageThat().contains("Cycles");
+    }
   }
 
-  @Ignore
   @Test
   public void build_withNegativeDuration_shouldThrow() {
-    Truth.assert_().fail();
+    try {
+      SimpleTimingSummary.builder() //
+          .setNumStartStopCycles(1) //
+          .setTotalElapsedTime(Duration.ofSeconds(-1)) //
+          .build();
+      Truth.assert_().fail("Expected an exception here.");
+    } catch (IllegalStateException ise) {
+      assertThat(ise).hasMessageThat().contains("negative");
+      assertThat(ise).hasMessageThat().contains("Elapsed");
+    }
   }
 
-  @Ignore
   @Test
   public void build_withPositiveValues_shouldWork() {
-    Truth.assert_().fail();    
+    TimingSummary ts = SimpleTimingSummary.builder() //
+        .setNumStartStopCycles(2) //
+        .setTotalElapsedTime(Duration.ofSeconds(20)) //
+        .build();
+    
+    assertThat(ts.numStartStopCycles()).isEqualTo(2);
+    assertThat(ts.totalElapsedTime()).isEqualTo(Duration.ofSeconds(20));
   }
 }
