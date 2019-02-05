@@ -3,7 +3,7 @@ package com.pervasivecode.utils.concurrent.timing;
 import java.time.Duration;
 
 /**
- * This is a timer that can be asked about its current state.
+ * A timer that can be asked about its current state.
  * <p>
  * Valid timer states are:
  * <ul>

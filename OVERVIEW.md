@@ -27,11 +27,11 @@ A summary of the timer activity for one stage of multistage operation.
 
 #### [QueryableTimer](src/main/java/com/pervasivecode/utils/concurrent/timing/QueryableTimer.java)
 
-This is a timer that can be asked about its current state.
+A timer that can be asked about its current state.
 
 #### [StoppableTimer](src/main/java/com/pervasivecode/utils/concurrent/timing/StoppableTimer.java)
 
-This is simply a timer that can be stopped.
+A timer that can be stopped.
 
 ## Enums
 

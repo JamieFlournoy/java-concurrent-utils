@@ -3,7 +3,7 @@ package com.pervasivecode.utils.concurrent.timing;
 import java.time.Duration;
 
 /**
- * This is simply a timer that can be stopped.
+ * A timer that can be stopped.
  */
 public interface StoppableTimer {
   /**
