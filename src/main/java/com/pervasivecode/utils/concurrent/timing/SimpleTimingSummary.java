@@ -6,7 +6,7 @@ import com.google.auto.value.AutoValue;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSummary;
 
 /**
- * A basic TimingSummary implememtation that just
+ * A basic TimingSummary implememtation, with validation.
  */
 @AutoValue
 public abstract class SimpleTimingSummary implements TimingSummary {
