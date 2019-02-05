@@ -166,32 +166,23 @@ public class BlockingExecutorServiceTest {
   }
 
   private static class TimerKeepingMultistageStopwatch implements MultistageStopwatch<Operation> {
-    private final CurrentNanosSource nanoSource;
-    private final ArrayList<SimpleActiveTimer> sidecarTimers;
-    private final MultistageStopwatch<Operation> wrapped;
+    private final ArrayList<SimpleActiveTimer> capturedTimers;
+    private final SimpleMultistageStopwatch<Operation> wrapped;
 
     public TimerKeepingMultistageStopwatch(CurrentNanosSource nanoSource) {
-      this.nanoSource = nanoSource;
       this.wrapped = new SimpleMultistageStopwatch<Operation>(nanoSource, Operation.values());
-      this.sidecarTimers = new ArrayList<>();
+      this.capturedTimers = new ArrayList<>();
     }
 
-    public List<SimpleActiveTimer> sidecarTimers() {
-      return this.sidecarTimers;
+    public List<SimpleActiveTimer> capturedTimers() {
+      return this.capturedTimers;
     }
 
     @Override
     public StoppableTimer startTimer(Operation timertype) {
-      // TODO refactor SimpleMultistageStopwatch to return a SimpleActiveTimer, and just grab a
-      // reference to that instead of making a sidecarTimer instance here.
-      SimpleActiveTimer sidecarTimer = SimpleActiveTimer.createAndStart(nanoSource);
-      sidecarTimers.add(sidecarTimer);
-      StoppableTimer wrappedTimer = wrapped.startTimer(timertype);
-      StoppableTimer doubledTimer = () -> {
-        sidecarTimer.stopTimer();
-        return wrappedTimer.stopTimer();
-      };
-      return doubledTimer;
+      SimpleActiveTimer capturedTimer = wrapped.startTimer(timertype);
+      capturedTimers.add(capturedTimer);
+      return capturedTimer;
     }
 
     @Override
@@ -256,7 +247,7 @@ public class BlockingExecutorServiceTest {
     blockedTask.awaitTaskCompletion(1, SECONDS);
     // We now expect that each timer experienced different amounts of blocking and queueing delays.
 
-    List<SimpleActiveTimer> timers = testStopwatch.sidecarTimers();
+    List<SimpleActiveTimer> timers = testStopwatch.capturedTimers();
 
     // slowTask should not have blocked, and should have whizzed through the queue straight to the
     // executor thread.

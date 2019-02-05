@@ -26,7 +26,7 @@ public final class SimpleMultistageStopwatch<T extends Enum<?>>
   }
 
   @Override
-  public StoppableTimer startTimer(T timerType) {
+  public SimpleActiveTimer startTimer(T timerType) {
     return startSimpleActiveTimer(timerType);
   }
 
