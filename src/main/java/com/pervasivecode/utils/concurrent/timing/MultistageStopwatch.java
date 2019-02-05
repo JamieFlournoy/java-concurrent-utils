@@ -1,7 +1,6 @@
 package com.pervasivecode.utils.concurrent.timing;
 
 import java.time.Duration;
-import com.pervasivecode.utils.concurrent.example.TriathlonTimingExample;
 
 /**
  * This stopwatch manages multiple concurrent timers tracking each stage of a user-defined
@@ -31,11 +30,13 @@ import com.pervasivecode.utils.concurrent.example.TriathlonTimingExample;
  *     "Average bicycling race leg time across all competitors: %d seconds",
  *     averageTime.toSeconds()));
  * </pre>
- * See {@link TriathlonTimingExample} for a more complete example.
+ *
+ * See {@link com.pervasivecode.utils.concurrent.example.TriathlonTimingExample} for a more complete
+ * example.
  *
  * @param <T> The enumeration of individual phases that are contained in the measured activities.
  *
- * @see TriathlonTimingExample
+ * @see com.pervasivecode.utils.concurrent.example.TriathlonTimingExample
  */
 public interface MultistageStopwatch<T extends Enum<?>> {
   /**

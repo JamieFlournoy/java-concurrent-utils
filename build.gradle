@@ -143,7 +143,7 @@ tasks.withType(JavaCompile).configureEach {
 
 // Generate Javadoc documentation files from Java source code.
 javadoc {
-    source = sourceSets.main.allJava
+    source = [sourceSets.main.allJava, sourceSets.examples.allJava]
     // This classpath value makes the source's dependencies visible to
     // the Javadoc tool.
     classpath = sourceSets.main.runtimeClasspath
