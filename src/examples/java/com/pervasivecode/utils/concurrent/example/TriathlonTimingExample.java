@@ -19,7 +19,7 @@ import com.pervasivecode.utils.time.testing.FakeNanoSource;
  * to represent the captured timing information in a human-readable form.
  */
 public class TriathlonTimingExample implements ExampleApplication {
-  public enum Sport {
+  protected enum Sport {
     RUNNING, SWIMMING, BICYCLING
   }
 
