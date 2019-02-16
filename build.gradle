@@ -106,6 +106,8 @@ jacocoTestReport {
     }
 }
 
+jacocoTestReport.dependsOn 'test'
+
 addCucumberSuite 'cucumberTest'
 cucumber {
     maxParallelForks = 4
