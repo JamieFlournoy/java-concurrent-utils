@@ -1,6 +1,6 @@
 # How to use Gradle with this project
 
-This project uses the Gradle build system to automate builds. It currently uses Gradle version 5.1. If you have no idea what Gradle is or how to use it, you may want to refer to the [Gradle User Manual for version 5.1](https://docs.gradle.org/5.1/userguide/userguide.html).
+This project uses the Gradle build system to automate builds. It currently uses Gradle version 5.2.1. If you have no idea what Gradle is or how to use it, you may want to refer to the [Gradle User Manual for version 5.2.1](https://docs.gradle.org/5.2.1/userguide/userguide.html).
 
 `build.gradle` is the main Gradle config file for this project. Pretty much everything is in there; `settings.gradle` is the only other file.
 
@@ -8,7 +8,7 @@ See [Developer Instructions](DEVELOPERS.md) for how to build the code, once Grad
 
 ## The Gradle Wrapper
 
-The [Gradle "wrapper"](https://docs.gradle.org/5.1/userguide/gradle_wrapper.html) is a script that can more or less bootstrap a set of Gradle jars on a new machine. So it's not necessary to install Gradle on a host before running `./gradlew`, which is convenient.
+The [Gradle "wrapper"](https://docs.gradle.org/5.2.1/userguide/gradle_wrapper.html) is a script that can more or less bootstrap a set of Gradle jars on a new machine. So it's not necessary to install Gradle on a host before running `./gradlew`, which is convenient.
 
 Also, the Gradle wrapper pins the build to a specific Gradle version, which is a good thing since the `build.gradle` file has proven to be very version-sensitive vs. various "how to do ___ with Gradle" instructions designed for older versions of Gradle.
 
