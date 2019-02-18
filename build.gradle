@@ -17,7 +17,7 @@ plugins {
 
     // This adds ErrorProne, which warns about source code that looks
     // like it's likely to be a bug, or to lead to future bugs.
-    id "net.ltgt.errorprone" version "0.6"
+    id "net.ltgt.errorprone" version "0.7"
 
     // This plugin provides integration test tasks using the Cucumber
     // behavior-driven development tool.
@@ -51,9 +51,9 @@ dependencies {
     implementation 'com.google.guava:guava:27.0.1-jre'
     implementation 'com.pervasivecode:time-utils:0.11'
     implementation 'com.pervasivecode:stats-utils:0.9.6'
-    implementation 'com.google.auto.value:auto-value-annotations:1.6.2'
+    implementation 'com.google.auto.value:auto-value-annotations:1.6.3'
 
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.3'
 
     // Dependencies needed for running tests:
     testImplementation 'com.pervasivecode:concurrent-testing-utils:0.9.1'
@@ -61,10 +61,10 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.+'
     testImplementation "com.google.truth:truth:0.42"
     testImplementation 'com.github.cbismuth:junit-repeat-rule:1.1.2'
-    testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.0.3'
+    testImplementation 'nl.jqno.equalsverifier:equalsverifier:3.1.4'
 
     // To make the Eclipse Gradle Buildship plugin put Cucumber jars on the source path:
-    testImplementation 'io.cucumber:cucumber-java8:4.2.0'
+    testImplementation 'io.cucumber:cucumber-java8:4.2.3'
 
     // Dependencies needed when running ErrorProne checks:
     errorprone "com.google.errorprone:error_prone_core:2.3.2"
@@ -137,7 +137,7 @@ cucumberTest {
     stepDefinitionRoots = ['com.pervasivecode.utils.concurrent.cucumber']
 }
 dependencies {
-    cucumberTestImplementation 'io.cucumber:cucumber-java8:4.2.0'
+    cucumberTestImplementation 'io.cucumber:cucumber-java8:4.2.3'
     cucumberTestImplementation 'junit:junit:4.12'
     cucumberTestImplementation "com.google.truth:truth:0.42"
     cucumberTestImplementation  group: 'com.google.guava', name: 'guava', version: '27.0.1-jre'
