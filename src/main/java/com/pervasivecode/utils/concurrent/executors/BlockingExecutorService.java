@@ -73,8 +73,8 @@ public class BlockingExecutorService implements ExecutorService {
   private final AtomicBoolean isQueueShutdown = new AtomicBoolean(false);
   private final CurrentNanosSource nanoSource;
 
-  // TODO try to make the taskSubmittingThread be a thread in the regular executor service, to
-  // simplify the implementation of this class.
+  // TODO try to make the taskSubmittingThread be a permanently-running (but blocked) hidden extra
+  // thread in the wrapped executor service, to simplify the implementation of this class.
   private final ExecutorService taskSubmittingThread = Executors.newSingleThreadExecutor();
 
   /**
@@ -90,14 +90,7 @@ public class BlockingExecutorService implements ExecutorService {
     stopwatch = config.stopwatch();
     nanoSource = config.currentNanosSource();
 
-
-    // TODO update this comment.
-
-    // Make a semaphore with enough permits to fill the queue. ThreadPoolExecutor will reject a
-    // task if the queue is full and a new worker thread hasn't started up and grabbed an item,
-    // so we can't rely on (maxQueueCapacity + config.maxThreads()) tasks safely being executable
-    // without RejectedExecutionException.
-
+    // Make a semaphore with enough permits to fill the queue and the executor threads.
     maxUnblockedTaskCount = maxQueueCapacity + config.numThreads();
     queueSlotSemaphore = new Semaphore(maxUnblockedTaskCount);
 
@@ -113,7 +106,7 @@ public class BlockingExecutorService implements ExecutorService {
         SECONDS, new ArrayBlockingQueue<>(actualQueueSize),
         new ThreadFactoryBuilder().setNameFormat(config.nameFormat()).build());
 
-    // This should never be needed, helps to iron out odd cases where ThreadPoolExecutor is
+    // This should never be needed, but helps to iron out odd cases where ThreadPoolExecutor is
     // starting up its worker threads and rejects tasks even though it hasn't started all of its
     // core threads yet(!). (This is not hypothetical, but was experimentally determined.)
     tpe.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
