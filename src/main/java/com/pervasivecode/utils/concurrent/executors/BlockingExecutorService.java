@@ -22,7 +22,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch;
@@ -237,12 +236,11 @@ public class BlockingExecutorService implements ExecutorService {
   @Override
   public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
     checkState(isQueueShutdown.get(), "shutdown has not been called yet.");
-    long nanosBeforeQueueWait = this.nanoSource.currentTimeNanoPrecision();
-
+    final long nanosBeforeQueueWait = this.nanoSource.currentTimeNanoPrecision();
     StoppableTimer terminationTimer = stopwatch.startTimer(Operation.GRACEFUL_SHUTDOWN);
-    final boolean queueTerminatedInTime =
-        this.queueSlotSemaphore.tryAcquire(this.maxQueueCapacity, timeout, unit);
-    if (!queueTerminatedInTime) {
+
+    final boolean queueEmptyInTime = queueSlotSemaphore.tryAcquire(maxQueueCapacity, timeout, unit);
+    if (!queueEmptyInTime) {
       terminationTimer.stopTimer();
       // We timed out waiting, so just return now.
       return false;
@@ -250,16 +248,24 @@ public class BlockingExecutorService implements ExecutorService {
     // In case someone calls awaitTermination again:
     this.queueSlotSemaphore.release(this.maxQueueCapacity);
 
-    long nanosAfterQueueWait = this.nanoSource.currentTimeNanoPrecision();
-    long nanosElapsedDuringQueueWait = nanosAfterQueueWait - nanosBeforeQueueWait;
+    final long nanosAfterQueueWait = this.nanoSource.currentTimeNanoPrecision();
+    final long nanosElapsedDuringQueueWait = nanosAfterQueueWait - nanosBeforeQueueWait;
     long remainingTimeoutNanos = unit.toNanos(timeout) - nanosElapsedDuringQueueWait;
 
     // The queue has already been marked as shut down and is empty now, so we can go ahead and
-    // gracefully shut down the ThreadPoolExecutor with whatever portion of the original timeout
-    // remains.
+    // gracefully shut down the TaskSubmittingThread and ThreadPoolExecutor with whatever portion of
+    // the original timeout remains.
+    final long nanosBeforeTaskSubmitterWait = this.nanoSource.currentTimeNanoPrecision();
     this.executor.shutdown();
+    this.taskSubmittingThread.shutdown();
 
-    // TODO also await termination of the taskSubmittingThread here.
+    final boolean terminatedInTime =
+        taskSubmittingThread.awaitTermination(remainingTimeoutNanos, NANOSECONDS);
+    if (!terminatedInTime) {
+      return false;
+    }
+    long nanosAfterSubmitterWait = this.nanoSource.currentTimeNanoPrecision();
+    remainingTimeoutNanos -= (nanosAfterSubmitterWait - nanosBeforeTaskSubmitterWait);
 
     // Wait for all the active threads in the ThreadPoolExecutor to finish, as long as that happens
     // within the remaining timeout period.
@@ -450,12 +456,12 @@ public class BlockingExecutorService implements ExecutorService {
     long enqueueStartTimeNanos = nanoSource.currentTimeNanoPrecision();
 
     ArrayBlockingQueue<Future<T>> submittedTasks = new ArrayBlockingQueue<>(tasks.size());
-    AtomicReference<Future<?>> taskSubmitterRef = new AtomicReference<>();
-    AtomicBoolean alreadyHaveSuccessfulResult = new AtomicBoolean(false);
+    AtomicBoolean alreadyHaveSucceededOrTimedOut = new AtomicBoolean(false);
 
     T result = null;
     // Null could be a valid result, so track success explicitly rather than via != null.
     boolean haveResult = false;
+    Future<?> submitterResult = null;
     // Save exceptions for re-throwing if no task succeeds.
     ExecutionException lastExecutionException = null;
     InterruptedException lastInterruptedException = null;
@@ -469,45 +475,38 @@ public class BlockingExecutorService implements ExecutorService {
           new ExecutorCompletionService<>(this);
 
       // Submit until either (1) all tasks are submitted or (2) one has already succeeded.
-      for (Callable<T> task : tasks) {
-        if (alreadyHaveSuccessfulResult.get()) {
-          break;
-        } else {
+      Runnable submitWrapped = () -> {
+        for (Callable<T> task : tasks) {
+          if (alreadyHaveSucceededOrTimedOut.get()) {
+            return;
+          }
+
           Callable<T> wrapped = () -> {
+            if (alreadyHaveSucceededOrTimedOut.get()) {
+              return null;
+            }
             // If this doesn't throw an Exception, we've got a successful result.
             T wrappedResult = task.call();
             // Try to avoid submitting any more tasks since we have a result already.
-            alreadyHaveSuccessfulResult.set(true);
+            alreadyHaveSucceededOrTimedOut.set(true);
             return wrappedResult;
           };
-          Runnable submitWrapped = () -> {
-            Future<T> submitResult = blockingCompletionService.submit(wrapped);
-            submittedTasks.add(submitResult);
-          };
-          // Use taskSubmittingThread to submit tasks, to prevent the thread that called invokeAny
-          // from blocking. (This will allow us to immediately cancel all the other tasks & return
-          // the result when one succeeds.)
-          Future<?> submitterResult = taskSubmittingThread.submit(submitWrapped);
-          taskSubmitterRef.set(submitterResult);
+          Future<T> submitResult = blockingCompletionService.submit(wrapped);
+          submittedTasks.add(submitResult);
         }
-      }
-
-      // If we have a successful result but the taskSubmittingThread is blocked trying to enqueue
-      // another task, cancel it, because we don't need for it to run.
-      Future<?> submitterResult = taskSubmitterRef.get();
-      if (alreadyHaveSuccessfulResult.get() && submitterResult != null) {
-        submitterResult.cancel(true);
-      }
+      };
+      // Use taskSubmittingThread to submit tasks, to prevent the thread that called invokeAny
+      // from blocking. (This will allow us to immediately cancel all the other tasks & return
+      // the result when one succeeds.)
+      submitterResult = taskSubmittingThread.submit(submitWrapped);
 
       // Get task results in the order in which the tasks finished. When the first successful task
-      // is
-      // encountered, save its result and cancel all the rest. (If no task is successful, we will
-      // have
-      // already executed every task in order to determine that, so there's nothing left to cancel.)
-
+      // is encountered, save its result and cancel all the rest. (If no task is successful, we will
+      // have already executed every task in order to determine that, so there's nothing left to
+      // cancel.)
       long pollStartTimeNanos = nanoSource.currentTimeNanoPrecision();
       long enqueueElapsedNanos = pollStartTimeNanos - enqueueStartTimeNanos;
-      timeoutNanosRemaining -= enqueueElapsedNanos;
+      timeoutNanosRemaining = Math.max(0, timeoutNanosRemaining - enqueueElapsedNanos);
       long totalPollTime = 0L;
       int numFailuresSoFar = 0;
 
@@ -516,34 +515,37 @@ public class BlockingExecutorService implements ExecutorService {
         if (waitForever) {
           futureResult = blockingCompletionService.take();
         } else {
-          if (timeoutNanosRemaining > 0) {
-            // We have a specified amount of time to wait for a successful result.
-            pollStartTimeNanos = nanoSource.currentTimeNanoPrecision();
-            futureResult = blockingCompletionService.poll(timeoutNanosRemaining, NANOSECONDS);
-            long pollEndTimeNanos = nanoSource.currentTimeNanoPrecision();
-            // In case we got a result from a failed task, subtract the time it took to get that
-            // result from timeoutNanosRemaining for use in the next iteration.
-            long lastPollDurationNanos = pollEndTimeNanos - pollStartTimeNanos;
-            totalPollTime += lastPollDurationNanos;
-            timeoutNanosRemaining -= lastPollDurationNanos;
-          } else {
-            futureResult = null;
+          // We have a specified amount of time to wait for a successful result.
+          pollStartTimeNanos = nanoSource.currentTimeNanoPrecision();
+          futureResult = blockingCompletionService.poll(timeoutNanosRemaining, NANOSECONDS);
+          long pollEndTimeNanos = nanoSource.currentTimeNanoPrecision();
+          // In case we got a result from a failed task, subtract the time it took to get that
+          // result from timeoutNanosRemaining for use in the next iteration.
+          long lastPollDurationNanos = pollEndTimeNanos - pollStartTimeNanos;
+          totalPollTime += lastPollDurationNanos;
+          timeoutNanosRemaining -= lastPollDurationNanos;
+
+          if (futureResult == null) {
+            // Tell submitWrapped to stop submitting tasks because the timeout has been exceeded.
+            alreadyHaveSucceededOrTimedOut.set(true);
+            
+            // The timeout expired and poll returned null: no tasks completed, so we should throw a
+            // TimeoutException from this method.
+            long elapsedBeforeTimeoutMillis =
+                NANOSECONDS.toMillis(enqueueElapsedNanos + totalPollTime);
+            pollTimedOutException =
+                new TimeoutException("Timeout exceeded waiting for a successful result. ("
+                    + enqueueElapsedNanos + "ns enqueueing + " + totalPollTime + "ns poll time = "
+                    + elapsedBeforeTimeoutMillis + "ms before timeout. " + timeoutNanosRemaining
+                    + "ns (" + (timeoutNanosRemaining / 1000000L) + "ms) timeout remaining, "
+                    + numFailuresSoFar + " failed results skipped before last poll timed out.)");
+            break;
           }
         }
-        if (futureResult == null) {
-          // The timeout expired and poll returned null: no tasks completed, so we should throw a
-          // TimeoutException from this method.
-          long elapsedBeforeTimeoutMillis =
-              NANOSECONDS.toMillis(enqueueElapsedNanos + totalPollTime);
-          pollTimedOutException =
-              new TimeoutException("Timeout exceeded waiting for a successful result. ("
-                  + enqueueElapsedNanos + "ns enqueueing + " + totalPollTime + "ns poll time = "
-                  + elapsedBeforeTimeoutMillis + "ms before timeout. " + timeoutNanosRemaining
-                  + "ns (" + (timeoutNanosRemaining / 1000000L) + "ms) timeout remaining, "
-                  + numFailuresSoFar + " failed results skipped before last poll timed out.)");
-          break;
-        }
         try {
+          // We have a futureResult, which means a task finished, but ExecutorCompletionService
+          // returns Future<T> from failed tasks too, so examine the futureResult to see if it
+          // describes a success or a failure.
           result = futureResult.get();
           haveResult = true;
           break;
@@ -554,6 +556,9 @@ public class BlockingExecutorService implements ExecutorService {
         }
       }
     } catch (InterruptedException ie) {
+      // The thread that was invoking tasks was interrupted. We'll interpret that as meaning that
+      // the invoked tasks should be cancelled too, by saving the exception here and continuing on
+      // to the cleanup code below.
       lastInterruptedException = ie;
     }
 
@@ -563,8 +568,15 @@ public class BlockingExecutorService implements ExecutorService {
     // 3) been interrupted
     // In cases 1 and 3, there may be tasks scheduled to run or still running which we don't need
     // anymore.
+
+    // If submitWrapped is still trying to enqueue tasks, kill it.
+    if (submitterResult != null && !submitterResult.isDone()) {
+      submitterResult.cancel(true);
+    }
     for (Future<T> submittedTask : submittedTasks) {
-      submittedTask.cancel(true); // This is OK to do even if the task is already done or cancelled
+      if (!submittedTask.isDone()) {
+        submittedTask.cancel(true);
+      }
     }
 
     if (haveResult) {
@@ -576,10 +588,8 @@ public class BlockingExecutorService implements ExecutorService {
     if (lastExecutionException != null) {
       throw lastExecutionException;
     }
-    if (lastInterruptedException != null) {
-      throw lastInterruptedException;
-    }
-    throw new IllegalStateException(
+    checkState(lastInterruptedException != null,
         "Invalid internal state: no success, no failures, not interrupted.");
+    throw lastInterruptedException;
   }
 }

@@ -14,8 +14,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -47,6 +49,10 @@ public class BlockingExecutorServiceTest {
   // are too strict, and may cause intermittent test failures due to timeouts and teardown() finding
   // workers that are still running.)
   private static final int NUM_REPEATS = 5;
+
+  private static final int WAS_CANCELLED = -1;
+  private static final int STARTED = 1;
+  private static final int FINISHED = 2;
 
   private FakeNanoSource nanoSource;
 
@@ -466,6 +472,7 @@ public class BlockingExecutorServiceTest {
     blockingExecService.shutdown();
     boolean stoppedInTime = blockingExecService.awaitTermination(1, MILLISECONDS);
     assertThat(stoppedInTime).isTrue();
+    assertThat(blockingExecService.isTerminated()).isTrue();
   }
 
   @Test
@@ -482,6 +489,7 @@ public class BlockingExecutorServiceTest {
 
     task.unpause();
     blockingExecService.awaitTermination(1, SECONDS);
+    assertThat(blockingExecService.isTerminated()).isTrue();
   }
 
   @Test
@@ -498,6 +506,7 @@ public class BlockingExecutorServiceTest {
     assertThat(stoppedInTime).isFalse();
     blockingExecService.shutdownNow();
     blockingExecService.awaitTermination(1, SECONDS);
+    assertThat(blockingExecService.isTerminated()).isTrue();
   }
 
   @Test
@@ -524,6 +533,7 @@ public class BlockingExecutorServiceTest {
     assertThat(stoppedInTime).isTrue();
 
     blockingExecService.awaitTermination(1, SECONDS);
+    assertThat(blockingExecService.isTerminated()).isTrue();
   }
 
   @Test
@@ -545,6 +555,7 @@ public class BlockingExecutorServiceTest {
 
     stoppedInTime = blockingExecService.awaitTermination(100, MILLISECONDS);
     assertThat(stoppedInTime).isTrue();
+    assertThat(blockingExecService.isTerminated()).isTrue();
   }
 
   // --------------------------------------------------------------------------
@@ -891,39 +902,101 @@ public class BlockingExecutorServiceTest {
   //
   // --------------------------------------------------------------------------
 
-  @Test
-  @Repeat(times = NUM_REPEATS)
-  public void invokeAny_withSuccessWhileOthersIncomplete_shouldCancelOthers() throws Exception {
-    BlockingExecutorServiceConfig config = configBuilder().build();
-    blockingExecService = new BlockingExecutorService(config);
+  // invokeAny should not run unnecessary tasks, nor should it let tasks that are running finish
+  // once it has a single successful result.
+  private void checkInvokeAnyCancelsExtraTasks(
+      int numExtraTasks, int indexOfSuccessfulTask) throws Exception {
+    // ExecutorService#invokeAny returns a single Future<T> that contains the result of the first
+    // task that succeeded. For the purposes of this test we want to observe what happened to the
+    // other tasks too, to make sure that they were handled properly. 
 
-    int numSlowpokes = config.numThreads() - 1;
-    CountDownLatch slowpokesToCancel = new CountDownLatch(numSlowpokes);
-    List<Callable<Long>> invokable = new ArrayList<>(numSlowpokes + 1);
-    for (int i = 0; i < numSlowpokes; i++) {
-      long resultVal = 1L << i;
-      Callable<Long> slowpoke = () -> {
-        PausingNoOpRunnable pauser = new PausingNoOpRunnable();
-        pauser.run();
-        if (Thread.currentThread().isInterrupted()) {
-          slowpokesToCancel.countDown();
-        }
-        return resultVal;
-      };
-      invokable.add(slowpoke);
+    final int totalNumTasks = numExtraTasks + 1;
+    final int numCancellableSlowTasks = numExtraTasks - indexOfSuccessfulTask;
+    ArrayList<Callable<Long>> tasks = new ArrayList<>(totalNumTasks);
+
+    // Holder of results of the cancellable tasks.
+    AtomicIntegerArray taskSideResults = new AtomicIntegerArray(numCancellableSlowTasks);
+
+    // Add tasks whose purpose is to run and immediately fail, prior to the successful run of
+    // immediateSuccessTask.
+    for (int i = 0; i < indexOfSuccessfulTask; i++) {
+      tasks.add(new FailingCallable<Long>());
     }
-    invokable.add(() -> Long.MIN_VALUE);
 
-    Callable<Long> callInvokeAny = () -> blockingExecService.invokeAny(invokable);
+    // This task should succeed, which should cause invokeAny to cancel (or not submit) any
+    // of the remaining tasks.
+    final Callable<Long> immediateSuccessTask = () -> 1L;
+    tasks.add(immediateSuccessTask);
+
+    Semaphore slowRunningTaskPermit = new Semaphore(numCancellableSlowTasks);
+    CountDownLatch canSlowRunningTasksFinish = new CountDownLatch(1);
+
+    // Add the slow-running extra tasks.
+    for (int i = 0; i < numCancellableSlowTasks; i++) {
+      final long returnValue = 100L + i;
+      final int resultIndex = i;
+      tasks.add(() -> {
+        slowRunningTaskPermit.acquire();
+        taskSideResults.set(resultIndex, STARTED);
+        try {
+          canSlowRunningTasksFinish.await();
+        } catch (InterruptedException ie) {
+          taskSideResults.set(resultIndex, WAS_CANCELLED);
+        } finally {
+          slowRunningTaskPermit.release();
+        }
+        taskSideResults.set(resultIndex, FINISHED);
+        return returnValue;
+      });
+    }
 
     ExecutorService taskSubmittingService = Executors.newSingleThreadExecutor();
-    Future<Long> futureResult = taskSubmittingService.submit(callInvokeAny);
-    Long result = futureResult.get(100, MILLISECONDS);
-    assertThat(result).isEqualTo(Long.MIN_VALUE);
+    Future<Long> futureResultOfInvokeAny =
+        taskSubmittingService.submit(() -> blockingExecService.invokeAny(tasks));
 
-    slowpokesToCancel.await(100, MILLISECONDS);
+    // It shouldn't take long for immediateSuccessTask to be scheduled and to finish.
+    Long resultOfInvokeAny = futureResultOfInvokeAny.get(50, MILLISECONDS);
+    assertThat(resultOfInvokeAny).isEqualTo(1L);
+
+    // Now, wait for all of the slow-running tasks that started to be cancelled and finish.
+    boolean extraTasksFinished = slowRunningTaskPermit.tryAcquire(numExtraTasks, 100, MILLISECONDS);
+
+    // If there are still some that haven't finished, that's a test failure. Unblock those tasks
+    // now, and we'll fail later in this test since those tasks will mark taskSideResults with
+    // FINISHED.
+    if (extraTasksFinished) {
+      canSlowRunningTasksFinish.countDown();
+      // Give them a chance to finish.
+      slowRunningTaskPermit.tryAcquire(numExtraTasks, 100, MILLISECONDS);
+    }
+
+    List<Integer> taskSideResultsArray = asList(taskSideResults);
+    assertThat(taskSideResultsArray).containsNoneOf(STARTED, FINISHED);
 
     taskSubmittingService.shutdownNow();
+  }
+
+  private static List<Integer> asList(AtomicIntegerArray atomicIntArray) {
+    final int size = atomicIntArray.length();
+    ArrayList<Integer> results = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      results.add(atomicIntArray.get(i));
+    }
+    return results;
+  }
+
+  @Test
+  @Repeat(times = NUM_REPEATS)
+  public void invokeAny_withManyTasksAllSuccessful_shouldCancelSlowOnesStillRunning()
+      throws Exception {
+    BlockingExecutorServiceConfig config = configBuilder()
+        .setNumThreads(3) //
+        .build();
+    blockingExecService = new BlockingExecutorService(config);
+    checkInvokeAnyCancelsExtraTasks(1, 0);
+    checkInvokeAnyCancelsExtraTasks(2, 2);
+    checkInvokeAnyCancelsExtraTasks(15, 0);
+    checkInvokeAnyCancelsExtraTasks(15, 15);
   }
 
   @Test
@@ -957,8 +1030,7 @@ public class BlockingExecutorServiceTest {
 
     List<FailingCallable<Integer>> failers = BlockingExecutorTestHelper.buildFailingCallables(1);
     try {
-      @SuppressWarnings("unused")
-      Integer failResult = blockingExecService.invokeAny(failers);
+      blockingExecService.invokeAny(failers);
       Truth.assert_().fail("Expected invokeAny to throw an exception since all tasks fail.");
     } catch (ExecutionException ee) {
       assertThat(ee).hasCauseThat().hasMessageThat().isEqualTo(FailingCallable.FAILURE_MESSAGE);
