@@ -114,6 +114,21 @@ jacocoTestReport {
 
 jacocoTestReport.dependsOn 'test'
 
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'CLASS'
+            limit {
+                minimum = 0.95
+            }
+            excludes = [
+                "com.pervasivecode.utils.concurrent.*.AutoValue_*"
+            ]
+        }
+    }
+}
+check.dependsOn jacocoTestCoverageVerification
+
 addCucumberSuite 'cucumberTest'
 cucumber {
     maxParallelForks = 4
