@@ -49,14 +49,14 @@ dependencies {
     // Dependencies needed at runtime and compile-time, but not
     // exposed in the API of this library:
     implementation 'com.google.guava:guava:27.0.1-jre'
-    implementation 'com.pervasivecode:time-utils:0.11'
-    implementation 'com.pervasivecode:stats-utils:0.9.6'
+    implementation 'com.pervasivecode:time-utils:1.0'
+    implementation 'com.pervasivecode:stats-utils:1.0'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.3'
 
     annotationProcessor 'com.google.auto.value:auto-value:1.6.3'
 
     // Dependencies needed for running tests:
-    testImplementation 'com.pervasivecode:concurrent-testing-utils:0.9.1'
+    testImplementation 'com.pervasivecode:concurrent-testing-utils:1.0'
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.+'
     testImplementation "com.google.truth:truth:0.42"
@@ -183,8 +183,8 @@ javadoc {
         // a list of Java package names of classes which are
         // documented in the Javadocs rooted at the specified URL.)
         linksOffline "https://docs.oracle.com/javase/10/docs/api/", 'gradle/javadocs/jdk/10'
-        linksOffline "https://www.javadoc.io/page/com.pervasivecode/time-utils/0.11/", 'gradle/javadocs/time-utils/0.11'
-        linksOffline "https://www.javadoc.io/page/com.pervasivecode/stats-utils/0.9.6/", 'gradle/javadocs/stats-utils/0.9.6'
+        linksOffline "https://www.javadoc.io/page/com.pervasivecode/time-utils/1.0/", 'gradle/javadocs/time-utils/1.0'
+        linksOffline "https://www.javadoc.io/page/com.pervasivecode/stats-utils/1.0/", 'gradle/javadocs/stats-utils/1.0'
         linksOffline "https://google.github.io/guava/releases/27.0.1-jre/api/docs/", 'gradle/javadocs/guava/27.0.1-jre'
     }
 }
