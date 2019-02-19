@@ -35,8 +35,8 @@ public class BlockingExecutorServiceConfigTest {
     try {
       builder.build();
       Truth.assert_().fail(EXPECTED_EXCEPTION_MESSAGE);
-    } catch (IllegalArgumentException iae) {
-      assertThat(iae).hasMessageThat().contains(expectedMessageSubstring);
+    } catch (IllegalStateException ise) {
+      assertThat(ise).hasMessageThat().contains(expectedMessageSubstring);
     }
   }
 

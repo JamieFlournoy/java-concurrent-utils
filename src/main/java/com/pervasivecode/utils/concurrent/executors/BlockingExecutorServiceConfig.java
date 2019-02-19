@@ -1,6 +1,6 @@
 package com.pervasivecode.utils.concurrent.executors;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import com.google.auto.value.AutoValue;
 import com.pervasivecode.utils.concurrent.executors.BlockingExecutorService.Operation;
 import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch;
@@ -9,6 +9,8 @@ import com.pervasivecode.utils.time.CurrentNanosSource;
 /** This object holds configuration information for a {@link BlockingExecutorService} instance. */
 @AutoValue
 public abstract class BlockingExecutorServiceConfig {
+  protected BlockingExecutorServiceConfig() {}
+
   /**
    * Create an object that will build a {@link BlockingExecutorServiceConfig} instance.
    *
@@ -65,6 +67,8 @@ public abstract class BlockingExecutorServiceConfig {
    */
   @AutoValue.Builder
   public static abstract class Builder {
+    protected Builder() {}
+
     public abstract BlockingExecutorServiceConfig.Builder setCurrentNanosSource(
         CurrentNanosSource nanosSource);
 
@@ -82,9 +86,9 @@ public abstract class BlockingExecutorServiceConfig {
     public BlockingExecutorServiceConfig build() {
       BlockingExecutorServiceConfig config = buildInternal();
 
-      checkArgument(config.queueSize() > 0, "queueSize must be positive.");
-      checkArgument(config.numThreads() > 0, "numThreads must be positive.");
-      checkArgument(config.nameFormat().contains("%d"),
+      checkState(config.queueSize() > 0, "queueSize must be positive.");
+      checkState(config.numThreads() > 0, "numThreads must be positive.");
+      checkState(config.nameFormat().contains("%d"),
           "nameFormat must contain a %%d placeholder.");
 
       return config;
