@@ -10,6 +10,8 @@ import com.pervasivecode.utils.concurrent.timing.MultistageStopwatch.TimingSumma
  */
 @AutoValue
 public abstract class SimpleTimingSummary implements TimingSummary {
+  protected SimpleTimingSummary() {}
+
   @Override
   public abstract Duration totalElapsedTime();
 
@@ -26,15 +28,17 @@ public abstract class SimpleTimingSummary implements TimingSummary {
    */
   @AutoValue.Builder
   public abstract static class Builder {
+    protected Builder() {}
+
     public abstract SimpleTimingSummary.Builder setTotalElapsedTime(Duration totalElapsedTime);
 
     public abstract SimpleTimingSummary.Builder setNumStartStopCycles(long numStartStopCycles);
 
     protected abstract SimpleTimingSummary buildInternal();
-    
+
     public SimpleTimingSummary build() {
       SimpleTimingSummary summary = buildInternal();
-      
+
       long cycles = summary.numStartStopCycles();
       Duration time = summary.totalElapsedTime();
 
@@ -45,7 +49,7 @@ public abstract class SimpleTimingSummary implements TimingSummary {
         checkState(time.equals(Duration.ZERO),
             "Zero start-stop cycles must have a total elapsed time of zero. Elapsed: %s", time);
       }
-      
+
       return summary;
     }
   }
