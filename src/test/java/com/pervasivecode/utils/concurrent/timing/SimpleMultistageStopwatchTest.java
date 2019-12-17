@@ -25,11 +25,13 @@ public class SimpleMultistageStopwatchTest {
     nanoSource = new FakeNanoSource();
   }
 
+  @SuppressWarnings("unused")
   @Test(expected = NullPointerException.class)
   public void constructor_withNullNanoSource_shouldThrow() {
     new SimpleMultistageStopwatch<RecipeStep>(null, RecipeStep.values());
   }
 
+  @SuppressWarnings("unused")
   @Test(expected = NullPointerException.class)
   public void constructor_withNullEnumValues_shouldThrow() {
     new SimpleMultistageStopwatch<RecipeStep>(new FakeNanoSource(), null);

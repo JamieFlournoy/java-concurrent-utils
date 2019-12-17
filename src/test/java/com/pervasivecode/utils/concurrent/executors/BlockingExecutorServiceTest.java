@@ -109,6 +109,7 @@ public class BlockingExecutorServiceTest {
   //
   // --------------------------------------------------------------------------
 
+  @SuppressWarnings("unused")
   @Test(expected = NullPointerException.class)
   public void constructor_withNullConfig_shouldThrow() {
     new BlockingExecutorService(null);
@@ -383,14 +384,14 @@ public class BlockingExecutorServiceTest {
 
   @Test
   @Repeat(times = NUM_REPEATS)
-  public void isShutdown_withNewInstance_shouldReturnFalse() throws Exception {
+  public void isShutdown_withNewInstance_shouldReturnFalse() {
     blockingExecService = new BlockingExecutorService(configBuilder().build());
     assertThat(blockingExecService.isShutdown()).isFalse();
   }
 
   @Test
   @Repeat(times = NUM_REPEATS)
-  public void isShutdown_afterShutdown_shouldReturnTrue() throws Exception {
+  public void isShutdown_afterShutdown_shouldReturnTrue() {
     blockingExecService = new BlockingExecutorService(configBuilder().build());
     blockingExecService.shutdown();
     assertThat(blockingExecService.isShutdown()).isTrue();
@@ -398,7 +399,7 @@ public class BlockingExecutorServiceTest {
 
   @Test
   @Repeat(times = NUM_REPEATS)
-  public void isShutdown_afterShutdownNow_shouldReturnTrue() throws Exception {
+  public void isShutdown_afterShutdownNow_shouldReturnTrue() {
     blockingExecService = new BlockingExecutorService(configBuilder().build());
     blockingExecService.shutdownNow();
     assertThat(blockingExecService.isShutdown()).isTrue();
@@ -412,7 +413,7 @@ public class BlockingExecutorServiceTest {
 
   @Test
   @Repeat(times = NUM_REPEATS)
-  public void isTerminated_withNewInstance_shouldReturnFalse() throws Exception {
+  public void isTerminated_withNewInstance_shouldReturnFalse() {
     blockingExecService = new BlockingExecutorService(configBuilder().build());
     assertThat(blockingExecService.isTerminated()).isFalse();
   }
@@ -940,7 +941,7 @@ public class BlockingExecutorServiceTest {
         taskSideResults.set(resultIndex, STARTED);
         try {
           canSlowRunningTasksFinish.await();
-        } catch (InterruptedException ie) {
+        } catch (@SuppressWarnings("unused") InterruptedException ie) {
           taskSideResults.set(resultIndex, WAS_CANCELLED);
         } finally {
           slowRunningTaskPermit.release();

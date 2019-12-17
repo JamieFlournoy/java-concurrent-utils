@@ -25,6 +25,7 @@ public class SimpleActiveTimerTest {
   //
   // --------------------------------------------------------------------------
 
+  @SuppressWarnings("unused")
   @Test(expected = NullPointerException.class)
   public void constructor_withNullNanoSource_shouldThrow() {
     new SimpleActiveTimer(null);
